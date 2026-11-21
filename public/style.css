@@ -753,6 +753,23 @@ main {
   transition: all 0.25s ease;
 }
 
+.input-group select {
+  width: 100%;
+  margin: 0;
+  background: rgba(248, 250, 249, 0.05);
+  border: 1px solid rgba(248, 250, 249, 0.18);
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 14px;
+  color: var(--snow);
+  outline: none;
+}
+
+.input-group select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(121, 174, 68, 0.25);
+}
+
 .input-group input::placeholder {
   color: #7b8794;
   font-weight: 500;

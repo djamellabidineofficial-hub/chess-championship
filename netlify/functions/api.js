@@ -75,12 +75,15 @@ const store = () => {
   if (process.env.LOCAL_STORAGE || !netlifyBlobs) {
     return fallbackLocalStore;
   }
-  const siteID = process.env.NETLIFY_SITE_ID;
-  const token = process.env.NETLIFY_ACCESS_TOKEN;
-  if (!siteID || !token) {
-    return fallbackLocalStore;
+  if (process.env.NETLIFY) {
+    try {
+      return netlifyBlobs.getStore({ name: "ecogeeks" });
+    } catch (err) {
+      console.error("Netlify Blobs unavailable, using local fallback:", err);
+      return fallbackLocalStore;
+    }
   }
-  return netlifyBlobs.getStore({ name: "ecogeeks", siteID, token });
+  return fallbackLocalStore;
 };
 
 const QR_SECRET = process.env.QR_SECRET || "chess_tournament_secret_key_2026";
@@ -105,12 +108,12 @@ const hashPassword = (password, salt = crypto.randomBytes(16).toString("hex")) =
 
 // The 6 Official Competing Clubs
 const DEFAULT_CLUBS = [
-  { id: "club1", username: "club1", name: "Royal Knights Club", emblem: "♞", color: "#F59E0B", defaultPass: "chess123" },
-  { id: "club2", username: "club2", name: "Grandmaster Kings", emblem: "♚", color: "#EAB308", defaultPass: "chess123" },
-  { id: "club3", username: "club3", name: "Imperial Queens", emblem: "♛", color: "#A855F7", defaultPass: "chess123" },
-  { id: "club4", username: "club4", name: "Iron Rooks Club", emblem: "♜", color: "#3B82F6", defaultPass: "chess123" },
-  { id: "club5", username: "club5", name: "Silver Bishops", emblem: "♝", color: "#94A3B8", defaultPass: "chess123" },
-  { id: "club6", username: "club6", name: "Vanguard Pawns", emblem: "♟", color: "#10B981", defaultPass: "chess123" },
+  { id: "club1", username: "club1", slot: "T1", name: "Royal Knights Club", emblem: "♞", color: "#F59E0B", defaultPass: "chess123" },
+  { id: "club2", username: "club2", slot: "T2", name: "Grandmaster Kings", emblem: "♚", color: "#EAB308", defaultPass: "chess123" },
+  { id: "club3", username: "club3", slot: "T3", name: "Imperial Queens", emblem: "♛", color: "#A855F7", defaultPass: "chess123" },
+  { id: "club4", username: "club4", slot: "T4", name: "Iron Rooks Club", emblem: "♜", color: "#3B82F6", defaultPass: "chess123" },
+  { id: "club5", username: "club5", slot: "T5", name: "Silver Bishops", emblem: "♝", color: "#94A3B8", defaultPass: "chess123" },
+  { id: "club6", username: "club6", slot: "T6", name: "Vanguard Pawns", emblem: "♟", color: "#10B981", defaultPass: "chess123" },
 ];
 
 const DEFAULT_CONDITIONS = `### Official Six-Clubs Championship Regulations
@@ -152,6 +155,7 @@ async function ensureClubsAndSettings() {
       const clubData = {
         id: c.id,
         username: c.username,
+        slot: c.slot,
         name: c.name,
         emblem: c.emblem,
         color: c.color,
@@ -164,12 +168,21 @@ async function ensureClubsAndSettings() {
       await s.setJSON(`users/${c.username}`, {
         username: c.username,
         clubId: c.id,
+        slot: c.slot,
         name: c.name,
         emblem: c.emblem,
         salt,
         hash,
         createdAt: Date.now(),
       });
+    } else if (!existing.slot) {
+      existing.slot = c.slot;
+      await s.setJSON(`clubs/${c.id}`, existing);
+      const existingUser = await s.get(`users/${c.username}`, { type: "json" });
+      if (existingUser) {
+        existingUser.slot = c.slot;
+        await s.setJSON(`users/${c.username}`, existingUser);
+      }
     }
   }
 
@@ -319,6 +332,7 @@ exports.handler = async (event) => {
           name: clubInfo.name || user.username,
           emblem: clubInfo.emblem || "♟",
           color: clubInfo.color || "#F59E0B",
+          slot: clubInfo.slot || "",
         },
       });
     }
@@ -342,8 +356,15 @@ exports.handler = async (event) => {
       if (password.length < 4) {
         return json(400, { error: "Password must be at least 4 characters." });
       }
+      if (!/^T[1-6]$/.test(slot)) {
+        return json(400, { error: "Please select a tournament slot from T1 to T6." });
+      }
       if (await s.get(`users/${username}`, { type: "json" })) {
         return json(409, { error: `Username "${username}" is already registered. If this is your club, please Sign In, or choose another username.` });
+      }
+      const existingClubs = await listAll("clubs/");
+      if (existingClubs.some((club) => club.slot === slot)) {
+        return json(409, { error: `${slot} is already assigned to another club. Please choose an available slot.` });
       }
 
       const { salt, hash } = hashPassword(password);
@@ -395,6 +416,7 @@ exports.handler = async (event) => {
         user: {
           username: session.username,
           clubId: session.clubId,
+          slot: club?.slot || "",
           name: club?.name || session.clubName || session.username,
           emblem: club?.emblem || session.clubEmblem || "♟",
           color: club?.color || session.clubColor || "#F59E0B",
