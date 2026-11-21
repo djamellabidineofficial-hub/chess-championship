@@ -106,15 +106,8 @@ const hashPassword = (password, salt = crypto.randomBytes(16).toString("hex")) =
   hash: crypto.scryptSync(password, salt, 64).toString("hex"),
 });
 
-// The 6 Official Competing Clubs
-const DEFAULT_CLUBS = [
-  { id: "club1", username: "club1", slot: "T1", name: "Royal Knights Club", emblem: "♞", color: "#F59E0B", defaultPass: "chess123" },
-  { id: "club2", username: "club2", slot: "T2", name: "Grandmaster Kings", emblem: "♚", color: "#EAB308", defaultPass: "chess123" },
-  { id: "club3", username: "club3", slot: "T3", name: "Imperial Queens", emblem: "♛", color: "#A855F7", defaultPass: "chess123" },
-  { id: "club4", username: "club4", slot: "T4", name: "Iron Rooks Club", emblem: "♜", color: "#3B82F6", defaultPass: "chess123" },
-  { id: "club5", username: "club5", slot: "T5", name: "Silver Bishops", emblem: "♝", color: "#94A3B8", defaultPass: "chess123" },
-  { id: "club6", username: "club6", slot: "T6", name: "Vanguard Pawns", emblem: "♟", color: "#10B981", defaultPass: "chess123" },
-];
+// Initially empty: Clubs appear as they register
+const DEFAULT_CLUBS = [];
 
 const DEFAULT_CONDITIONS = `### Official Six-Clubs Championship Regulations
 

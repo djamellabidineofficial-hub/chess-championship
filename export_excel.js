@@ -37,34 +37,9 @@ function generateExcelDatabase() {
     }
   }
 
-  // Fallback default clubs if clubs/ not yet populated
-  const defaultNames = {
-    club1: 'Royal Knights Club',
-    club2: 'Grandmaster Kings',
-    club3: 'Imperial Queens',
-    club4: 'Iron Rooks Club',
-    club5: 'Silver Bishops',
-    club6: 'Vanguard Pawns',
-  };
-  for (let i = 1; i <= 6; i++) {
-    const cid = `club${i}`;
-    if (!clubs[cid]) {
-      clubs[cid] = {
-        id: cid,
-        username: cid,
-        name: defaultNames[cid] || `Club ${i}`,
-        emblem: '♟',
-        points: 0,
-        played: 0,
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        pendingPoints: 0,
-        pendingScans: 0,
-        lastScanTime: 'N/A',
-        lastScanTimestamp: 0,
-      };
-    }
+  // If no clubs are registered, do not generate fake placeholder clubs
+  if (Object.keys(clubs).length === 0) {
+    // Empty database
   }
 
   // 2. Gather match scans

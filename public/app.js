@@ -1,28 +1,27 @@
 const IS_STATIC_HOST = window.location.hostname.endsWith("github.io") || window.location.protocol === "file:";
 const API_BASE = IS_STATIC_HOST ? "" : "/api";
 
-const CLIENT_DB_KEY = "chess_championship_db_v2";
+const CLIENT_DB_KEY = "chess_championship_db_v3";
 
-const DEFAULT_LOCAL_CLUBS = [
-  { id: "club1", username: "ecogeeks", name: "Eco Geeks Club", password: "password123", slot: "T1", points: 0, wins: 0, draws: 0 },
-  { id: "club2", username: "elite", name: "Elite Chess Club", password: "password123", slot: "T2", points: 0, wins: 0, draws: 0 },
-  { id: "club3", username: "knights", name: "Knight Riders", password: "password123", slot: "T3", points: 0, wins: 0, draws: 0 },
-  { id: "club4", username: "grandmaster", name: "Grandmaster Club", password: "password123", slot: "T4", points: 0, wins: 0, draws: 0 },
-  { id: "club5", username: "tactical", name: "Tactical Pawns", password: "password123", slot: "T5", points: 0, wins: 0, draws: 0 },
-  { id: "club6", username: "vanguard", name: "Checkmate Vanguard", password: "password123", slot: "T6", points: 0, wins: 0, draws: 0 }
-];
+const DEFAULT_LOCAL_CLUBS = [];
 
 const clientStore = {
   getDb() {
     try {
+      // Clear legacy storage keys from previous tests
+      localStorage.removeItem("chess_championship_db_v2");
+      localStorage.removeItem("chess_championship_db");
+    } catch {}
+
+    try {
       const data = localStorage.getItem(CLIENT_DB_KEY);
       if (data) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed.clubs) && parsed.clubs.length > 0) return parsed;
+        if (Array.isArray(parsed.clubs)) return parsed;
       }
     } catch {}
     const initDb = {
-      clubs: DEFAULT_LOCAL_CLUBS.map(c => ({ ...c })),
+      clubs: [],
       scans: [],
       sessions: {}
     };
@@ -132,7 +131,8 @@ const clientStore = {
       const tok = session.token;
       const sess = tok ? db.sessions[tok] : null;
       const clubId = sess ? (sess.clubId || sess.username) : session.user;
-      const club = db.clubs.find(c => c.id === clubId || c.username === clubId) || session.club || db.clubs[0];
+      const club = (db.clubs || []).find(c => c.id === clubId || c.username === clubId) || session.club;
+      if (!club) throw new Error("No active club session.");
       const confirmedScans = (db.scans || []).filter(s => s.status === "confirmed");
       const clubScans = confirmedScans.filter(s => s.clubId === club.id || s.username === club.username || s.clubId === club.username);
       const pts = clubScans.reduce((sum, s) => sum + (Number(s.points) || 0), 0);
@@ -277,14 +277,11 @@ const clientStore = {
         return { ok: true };
       }
       if (cleanPath === "admin/reset" && method === "POST") {
-        db.clubs.forEach(c => {
-          c.points = 0;
-          c.wins = 0;
-          c.draws = 0;
-        });
+        db.clubs = [];
         db.scans = [];
+        db.sessions = {};
         this.saveDb(db);
-        return { ok: true, message: "Tournament scores reset to 0." };
+        return { ok: true, message: "Tournament reset. All clubs and match results cleared." };
       }
     }
 
@@ -937,47 +934,63 @@ async function loadLeaderboard() {
     const rows = (data && data.rows && Array.isArray(data.rows)) ? data.rows : [];
 
     setMsg(msgEl, "");
-    if (countEl) countEl.textContent = `${rows.length} clubs competing`;
+    if (countEl) {
+      countEl.textContent = rows.length === 0 ? "0 clubs registered" : `${rows.length} ${rows.length === 1 ? "club" : "clubs"} competing`;
+    }
 
+    const hasPoints = rows.some((r) => (Number(r.points) || 0) > 0);
     const top1 = rows[0] || null;
     const top2 = rows.length > 1 ? rows[1] : null;
     const top3 = rows.length > 2 ? rows[2] : null;
 
     if (podiumEl) {
-      podiumEl.innerHTML = `
-        <!-- 2nd Place: Left (Snow White) -->
-        <div class="podium-col col-2">
-          <div class="podium-user">
-            <b class="user-name">${top2 ? escapeHtml(top2.name) : "-"}</b>
-            <span class="user-pts">${top2 ? formatPoints(top2.points) : "0"} pts</span>
+      if (!hasPoints || rows.length === 0) {
+        podiumEl.innerHTML = "";
+        podiumEl.hidden = true;
+        podiumEl.style.display = "none";
+      } else {
+        podiumEl.hidden = false;
+        podiumEl.style.display = "flex";
+        podiumEl.innerHTML = `
+          <!-- 2nd Place: Left (Snow White) -->
+          <div class="podium-col col-2">
+            <div class="podium-user">
+              <b class="user-name">${top2 ? escapeHtml(top2.name) : "-"}</b>
+              <span class="user-pts">${top2 ? formatPoints(top2.points) : "0"} pts</span>
+            </div>
+            <div class="podium-pillar pillar-2">2</div>
           </div>
-          <div class="podium-pillar pillar-2">2</div>
-        </div>
 
-        <!-- 1st Place: Center (Leaf Green) -->
-        <div class="podium-col col-1">
-          <div class="podium-user">
-            <b class="user-name">${top1 ? escapeHtml(top1.name) : "-"}</b>
-            <span class="user-pts">${top1 ? formatPoints(top1.points) : "0"} pts</span>
+          <!-- 1st Place: Center (Leaf Green) -->
+          <div class="podium-col col-1">
+            <div class="podium-user">
+              <b class="user-name">${top1 ? escapeHtml(top1.name) : "-"}</b>
+              <span class="user-pts">${top1 ? formatPoints(top1.points) : "0"} pts</span>
+            </div>
+            <div class="podium-pillar pillar-1">1</div>
           </div>
-          <div class="podium-pillar pillar-1">1</div>
-        </div>
 
-        <!-- 3rd Place: Right (Fire Red) -->
-        <div class="podium-col col-3">
-          <div class="podium-user">
-            <b class="user-name">${top3 ? escapeHtml(top3.name) : "-"}</b>
-            <span class="user-pts">${top3 ? formatPoints(top3.points) : "0"} pts</span>
+          <!-- 3rd Place: Right (Fire Red) -->
+          <div class="podium-col col-3">
+            <div class="podium-user">
+              <b class="user-name">${top3 ? escapeHtml(top3.name) : "-"}</b>
+              <span class="user-pts">${top3 ? formatPoints(top3.points) : "0"} pts</span>
+            </div>
+            <div class="podium-pillar pillar-3">3</div>
           </div>
-          <div class="podium-pillar pillar-3">3</div>
-        </div>
-      `;
+        `;
+      }
     }
 
     // Complete clubs ranking list (places 1 through N in sequential / tied competition order)
     if (listEl) {
       if (rows.length === 0) {
-        listEl.innerHTML = `<p class="hint" style="text-align: center; padding: 16px 0; margin: 0;">No clubs registered yet.</p>`;
+        listEl.innerHTML = `
+          <div style="text-align: center; padding: 42px 18px;">
+            <p style="font-size: 16px; color: var(--snow); font-weight: 700; margin: 0 0 6px;">No Clubs Registered Yet</p>
+            <p style="font-size: 13px; color: var(--muted); margin: 0; line-height: 1.6;">The tournament leaderboard is currently empty.<br>Clubs will appear here as soon as they sign up and record match results.</p>
+          </div>
+        `;
       } else {
         const maxPts = Math.max(1, ...rows.map(r => Number(r.points) || 0));
 
@@ -1000,8 +1013,8 @@ async function loadLeaderboard() {
           .map((r) => {
             const placeNum = r.computedRank;
             const pts = Number(r.points) || 0;
-            const pct = Math.min(100, Math.round((pts / maxPts) * 100));
-            const rankClass = placeNum === 1 ? "rank-gold" : placeNum === 2 ? "rank-silver" : placeNum === 3 ? "rank-bronze" : "rank-standard";
+            const pct = maxPts > 0 ? Math.min(100, Math.round((pts / maxPts) * 100)) : 0;
+            const rankClass = placeNum === 1 && pts > 0 ? "rank-gold" : placeNum === 2 && pts > 0 ? "rank-silver" : placeNum === 3 && pts > 0 ? "rank-bronze" : "rank-standard";
             return `
             <div class="rank-item ${rankClass}">
               <div class="rank-num"><bdi dir="ltr">${placeNum}</bdi></div>
@@ -1560,6 +1573,11 @@ async function loadAdminClubs() {
   try {
     const data = await api("clubs");
     const clubs = data.clubs || [];
+
+    if (clubs.length === 0) {
+      container.innerHTML = `<p class="hint" style="grid-column: 1 / -1; padding: 14px 0; text-align: center;">No clubs registered yet.</p>`;
+      return;
+    }
 
     container.innerHTML = clubs
       .map(
