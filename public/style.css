@@ -1667,10 +1667,11 @@ summary:hover {
   width: 100% !important;
   min-width: 0 !important;
   max-width: 100% !important;
+  table-layout: fixed !important;
   border-collapse: collapse !important;
-  font-size: clamp(10.5px, 2.3vw, 12.5px) !important;
+  font-size: clamp(10px, 2.3vw, 12.5px) !important;
   white-space: nowrap !important;
-  table-layout: auto !important;
+  box-sizing: border-box !important;
 }
 
 .conditions-table th,
@@ -1680,29 +1681,63 @@ summary:hover {
   white-space: nowrap !important;
   word-break: keep-all !important;
   vertical-align: middle !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
-.conditions-table th,
-.conditions-table td {
-  padding: 8px 5px !important;
+.conditions-table th:nth-child(1),
+.conditions-table td:nth-child(1) {
+  width: 18% !important;
+  text-align: left !important;
+  padding: 8px 3px !important;
+}
+
+.conditions-table th:nth-child(2),
+.conditions-table td:nth-child(2) {
+  width: 31% !important;
+  text-align: left !important;
+  padding: 8px 3px !important;
+}
+
+.conditions-table th:nth-child(3),
+.conditions-table td:nth-child(3),
+.conditions-table th:nth-child(4),
+.conditions-table td:nth-child(4),
+.conditions-table th:nth-child(5),
+.conditions-table td:nth-child(5) {
+  width: 17% !important;
+  text-align: center !important;
+  padding: 8px 2px !important;
+}
+
+.conditions-table.arabic-table th:nth-child(1),
+.conditions-table.arabic-table td:nth-child(1),
+.conditions-table.arabic-table th:nth-child(2),
+.conditions-table.arabic-table td:nth-child(2) {
+  text-align: right !important;
 }
 
 .conditions-table th {
   font-weight: 800 !important;
-  font-size: clamp(10.5px, 2.4vw, 12px) !important;
+  font-size: clamp(10px, 2.4vw, 12px) !important;
   letter-spacing: 0.01em !important;
 }
 
 .table-responsive {
-  overflow: hidden !important;
-  overflow-x: hidden !important;
-  overflow-y: hidden !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
   width: 100% !important;
   max-width: 100% !important;
   margin-bottom: 24px !important;
   border-radius: 14px !important;
   border: 1px solid var(--line) !important;
   background: rgba(248, 250, 249, 0.02) !important;
+  box-sizing: border-box !important;
+}
+
+.table-responsive::-webkit-scrollbar {
+  display: none !important;
 }
 
 /* Points Matrix Grid (English & Arabic) */
@@ -1719,15 +1754,30 @@ summary:hover {
    MOBILE & PHONE OPTIMIZATIONS (Adaptive for iPhone, Android, Foldables)
    ========================================================================== */
 @media (max-width: 600px) {
+  /* Global viewport lock against horizontal blowout */
+  html, body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   /* Header & Topbar */
   header.hero {
-    padding: max(12px, env(safe-area-inset-top)) 12px 14px !important;
+    padding: max(12px, env(safe-area-inset-top)) 10px 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
   }
 
   .topbar {
     width: 100% !important;
     max-width: 100% !important;
     padding: 0 4px !important;
+    box-sizing: border-box !important;
   }
 
   .menu-wrap {
@@ -1736,6 +1786,9 @@ summary:hover {
   }
 
   .brand-center {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     padding: 4px 6px 10px !important;
     gap: 8px !important;
   }
@@ -1777,23 +1830,44 @@ summary:hover {
     letter-spacing: -0.01em !important;
   }
 
-  /* Main Container */
+  /* Main Container & Panels */
   main {
     padding: 14px 10px 48px !important;
     width: 100% !important;
     max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
   }
 
   /* Glassmorphism & General Cards */
   .glass-auth-card,
   .card,
   .ranking-card {
-    padding: 20px 14px !important;
+    padding: 18px 12px !important;
     border-radius: 20px !important;
     margin-bottom: 14px !important;
     width: 100% !important;
     max-width: 100% !important;
+    overflow: hidden !important;
     box-sizing: border-box !important;
+  }
+
+  /* Confine Side Light Circles on Mobile */
+  .side-light-circle.left {
+    left: -20px !important;
+    max-width: 40% !important;
+  }
+
+  .side-light-circle.right {
+    right: -20px !important;
+    max-width: 40% !important;
   }
 
   /* Points Matrix (Win / Draw / Loss) */
@@ -1801,6 +1875,9 @@ summary:hover {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 6px !important;
     margin-bottom: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .points-matrix-grid > div {
@@ -1820,14 +1897,20 @@ summary:hover {
 
   /* Conditions Table: 1-Line Layout Fitted Cleanly */
   .conditions-table {
-    font-size: clamp(9.2px, 2.3vw, 11px) !important;
+    font-size: clamp(8.8px, 2.25vw, 10.5px) !important;
     width: 100% !important;
     max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    box-sizing: border-box !important;
   }
 
   .conditions-table th,
   .conditions-table td {
-    padding: 6px 3px !important;
+    padding: 6px 1px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 
   .table-responsive {
@@ -1835,86 +1918,150 @@ summary:hover {
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
     margin-bottom: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .table-responsive::-webkit-scrollbar {
     display: none !important;
   }
 
-  /* Leaderboard Podium */
+  /* Leaderboard Podium & Header */
   .ranking-header {
+    display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 8px !important;
     margin-bottom: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .ranking-header > div {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
 
   .ranking-title {
-    font-size: clamp(17px, 4.8vw, 23px) !important;
-    letter-spacing: 0.03em !important;
-    word-spacing: 0.06em !important;
+    font-size: clamp(14px, 4vw, 17px) !important;
+    letter-spacing: 0.02em !important;
+    word-spacing: normal !important;
+    line-height: 1.25 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    margin: 0 0 4px 0 !important;
+  }
+
+  .members-count {
+    font-size: 11.5px !important;
+    margin: 0 !important;
   }
 
   .pill-btn {
-    padding: 6px 14px !important;
-    font-size: 12px !important;
+    flex: 0 0 auto !important;
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
     white-space: nowrap !important;
   }
 
   .ranking-podium {
-    gap: 6px !important;
-    margin: 16px 0 14px !important;
-    padding: 0 !important;
+    display: flex !important;
     width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 6px !important;
+    margin: 14px 0 12px !important;
+    padding: 0 !important;
   }
 
   .podium-col {
     max-width: none !important;
     flex: 1 1 0 !important;
     min-width: 0 !important;
+    width: 33.33% !important;
+    box-sizing: border-box !important;
   }
 
   .podium-user {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
     margin-bottom: 8px !important;
   }
 
   .podium-user .user-name {
-    font-size: clamp(11px, 2.8vw, 13px) !important;
+    font-size: clamp(10.5px, 2.7vw, 12px) !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: block !important;
   }
 
   .podium-user .user-pts {
-    font-size: 11px !important;
+    font-size: 10.5px !important;
+  }
+
+  .podium-pillar {
+    width: 100% !important;
+    border-radius: 12px !important;
   }
 
   .pillar-1 {
-    height: 135px !important;
-    font-size: 30px !important;
-  }
-
-  .pillar-2 {
-    height: 105px !important;
+    height: 120px !important;
     font-size: 26px !important;
   }
 
-  .pillar-3 {
-    height: 80px !important;
+  .pillar-2 {
+    height: 95px !important;
     font-size: 22px !important;
   }
 
-  .rank-item {
-    padding: 9px 0 !important;
-    gap: 10px !important;
+  .pillar-3 {
+    height: 75px !important;
+    font-size: 18px !important;
+  }
+
+  .ranking-list {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .rank-item,
+  .ranking-row {
+    padding: 8px 6px !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .rank-num {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 13px !important;
-    border-radius: 8px !important;
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 11.5px !important;
+    border-radius: 6px !important;
+    flex: 0 0 24px !important;
   }
 
-  .rank-name, .rank-pts {
-    font-size: 13.5px !important;
+  .rank-name {
+    font-size: 12px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .rank-pts {
+    font-size: 12px !important;
+    flex: 0 0 auto !important;
   }
 
   /* Scan Code Section */
