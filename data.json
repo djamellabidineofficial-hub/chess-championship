@@ -446,5 +446,100 @@
     "clubEmblem": "♞",
     "clubColor": "#F59E0B",
     "createdAt": 1795249858755
+  },
+  "users/testclub": {
+    "username": "testclub",
+    "name": "Test Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "d545fe724646455e74bd559ddb4b5db2",
+    "hash": "9d6aa0ef930e554b7384335972efd7ddd20aa610cb518b9e820f468bf1196b3dec0d49e7b7e9026831a6084645ad0fa9f3e3d61723bc75242dc6058e03935d5c",
+    "createdAt": 1795257904333
+  },
+  "clubs/testclub": {
+    "id": "testclub",
+    "username": "testclub",
+    "name": "Test Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "d545fe724646455e74bd559ddb4b5db2",
+    "hash": "9d6aa0ef930e554b7384335972efd7ddd20aa610cb518b9e820f468bf1196b3dec0d49e7b7e9026831a6084645ad0fa9f3e3d61723bc75242dc6058e03935d5c",
+    "createdAt": 1795257904563
+  },
+  "sessions/38e32847a0e8b9217a27070ad4e6f59dd94536e7f36f53bfe3dc0daa079b5ee0": {
+    "username": "testclub",
+    "clubId": "testclub",
+    "clubName": "Test Club",
+    "clubEmblem": "♟",
+    "clubColor": "#F59E0B",
+    "createdAt": 1795257904571
+  },
+  "sessions/c35478a6a026684dc62e4728f9ccb8c6b06559033fba1747ec94b6b859c2f164": {
+    "username": "testclub",
+    "clubId": "testclub",
+    "clubName": "Test Club",
+    "clubEmblem": "♟",
+    "clubColor": "#F59E0B",
+    "createdAt": 1795258021751
+  },
+  "users/phoenix": {
+    "username": "phoenix",
+    "name": "Phoenix Chess Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "e9d3dda717704d29ffa9a6caf9d6efda",
+    "hash": "ffcd5e66db6f2e3f4ef61ad45b4a9042e84ccc72638ca2dfbd4d17c13c3d13c7fe893d60e30be9ac27d3dcd7a4e0a8b1cbc2b74f5a445b672ea23e791abbca06",
+    "createdAt": 1795258119807
+  },
+  "clubs/phoenix": {
+    "id": "phoenix",
+    "username": "phoenix",
+    "name": "Phoenix Chess Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "e9d3dda717704d29ffa9a6caf9d6efda",
+    "hash": "ffcd5e66db6f2e3f4ef61ad45b4a9042e84ccc72638ca2dfbd4d17c13c3d13c7fe893d60e30be9ac27d3dcd7a4e0a8b1cbc2b74f5a445b672ea23e791abbca06",
+    "createdAt": 1795258119852
+  },
+  "sessions/68632dacbeba63f97f2f5ccaefd52e18f2e41b3b15c9368893d18c418e5fa316": {
+    "username": "phoenix",
+    "clubId": "phoenix",
+    "clubName": "Phoenix Chess Club",
+    "clubEmblem": "♟",
+    "clubColor": "#F59E0B",
+    "createdAt": 1795258119891
+  },
+  "users/atlas": {
+    "username": "atlas",
+    "name": "Atlas Chess Academy",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "10f5401addf6662b074742882e346896",
+    "hash": "c2b93b99fb191a728ba98037431cc4692a78dc51d37d22087b3a159f7162a1276335efe2acc62a7187290df8405b9bfdfbb61b74605aae0f71ecb0ccd80c9e68",
+    "createdAt": 1795258419544
+  },
+  "clubs/atlas": {
+    "id": "atlas",
+    "username": "atlas",
+    "name": "Atlas Chess Academy",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "10f5401addf6662b074742882e346896",
+    "hash": "c2b93b99fb191a728ba98037431cc4692a78dc51d37d22087b3a159f7162a1276335efe2acc62a7187290df8405b9bfdfbb61b74605aae0f71ecb0ccd80c9e68",
+    "createdAt": 1795258419558
+  },
+  "sessions/cbaf135243a450343f6284654cfc1ff60033111e9c33042c4d21f359c4513a69": {
+    "username": "atlas",
+    "clubId": "atlas",
+    "clubName": "Atlas Chess Academy",
+    "clubEmblem": "♟",
+    "clubColor": "#F59E0B",
+    "createdAt": 1795258419576
   }
 }

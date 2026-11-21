@@ -72,7 +72,7 @@ function setMsg(el, text, ok = false) {
   if (!el) return;
   el.textContent = text;
   el.className = "msg " + (text ? (ok ? "ok" : "err") : "");
-  if (!text) el.style.display = "none";
+  el.style.display = text ? "block" : "none";
 }
 
 // ========================================================
@@ -287,8 +287,18 @@ async function loadClubScansLog() {
 $("#login-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target;
-  const username = form.username.value.trim().toLowerCase();
+  let username = form.username.value.trim().toLowerCase();
+  username = username.replace(/\s+/g, "_").replace(/[^a-z0-9_.-]/g, "");
   const password = form.password.value;
+
+  if (!username) {
+    setMsg(authMsg, "Please enter your club username.", false);
+    return;
+  }
+  if (!password) {
+    setMsg(authMsg, "Please enter your password.", false);
+    return;
+  }
 
   setMsg(authMsg, "Authenticating club...", true);
 
@@ -301,12 +311,18 @@ $("#login-form")?.addEventListener("submit", async (e) => {
 
     // Reveal main tabs
     if (mainNav) mainNav.hidden = false;
-    renderClubDash({ username: data.username, ...data.club });
+    await renderClubDash({ username: data.username, ...data.club });
 
-    // Instantly direct to Conditions section!
-    activateTab("conditions");
+    // Stay on My Club section and show active dashboard with welcome message!
+    activateTab("visitor");
+    const dashMsg = $("#club-dash-msg");
+    if (dashMsg) {
+      setMsg(dashMsg, `Welcome back, ${data.club?.name || data.username}! You are signed in.`, true);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     setMsg(authMsg, err.message, false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
 
@@ -321,14 +337,17 @@ $("#register-form")?.addEventListener("submit", async (e) => {
 
   if (!name) {
     setMsg(authMsg, "Please enter your club name.", false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   if (!username) {
-    setMsg(authMsg, "Please enter a club username.", false);
+    setMsg(authMsg, "Please enter a club username (letters, numbers, _).", false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   if (!password || password.length < 4) {
     setMsg(authMsg, "Password must be at least 4 characters.", false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
 
@@ -343,12 +362,18 @@ $("#register-form")?.addEventListener("submit", async (e) => {
 
     // Reveal main tabs
     if (mainNav) mainNav.hidden = false;
-    renderClubDash({ username: data.username, ...data.club });
+    await renderClubDash({ username: data.username, ...data.club });
 
-    // Instantly direct to Conditions section!
-    activateTab("conditions");
+    // Stay on My Club section and display the newly created account dashboard!
+    activateTab("visitor");
+    const dashMsg = $("#club-dash-msg");
+    if (dashMsg) {
+      setMsg(dashMsg, `Club account "${data.club?.name || data.username}" created successfully! Welcome to the championship.`, true);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     setMsg(authMsg, err.message, false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
 

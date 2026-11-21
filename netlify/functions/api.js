@@ -287,24 +287,25 @@ exports.handler = async (event) => {
 
     // POST /api/login -> Log in as one of the clubs
     if (method === "POST" && route === "login") {
-      const username = String(body.username || "").trim().toLowerCase();
+      let username = String(body.username || "").trim().toLowerCase();
+      const sanitized = username.replace(/\s+/g, "_").replace(/[^a-z0-9_.-]/g, "");
       const password = String(body.password || "");
 
-      // Check users/ or clubs/
-      let user = await s.get(`users/${username}`, { type: "json" });
-      let club = await s.get(`clubs/${username}`, { type: "json" });
+      // Check users/ or clubs/ (try both raw and sanitized)
+      let user = (await s.get(`users/${username}`, { type: "json" })) || (sanitized ? await s.get(`users/${sanitized}`, { type: "json" }) : null);
+      let club = (await s.get(`clubs/${username}`, { type: "json" })) || (sanitized ? await s.get(`clubs/${sanitized}`, { type: "json" }) : null);
 
       if (!user && club) {
         user = club;
       }
 
       if (!user) {
-        return json(401, { error: "Club username not found. Please select an official club." });
+        return json(401, { error: "Club username not found. Please check your username or register a new club account." });
       }
 
       const attempt = hashPassword(password, user.salt);
       if (!safeEqual(attempt.hash, user.hash)) {
-        return json(401, { error: "Incorrect password. Default club password is: chess123" });
+        return json(401, { error: "Incorrect password. If using a default club, default password is: chess123" });
       }
 
       const clubInfo = club || (await s.get(`clubs/${user.clubId || user.username}`, { type: "json" })) || user;

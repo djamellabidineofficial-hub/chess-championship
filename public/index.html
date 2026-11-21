@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="style.css?v=10">
   <script defer src="vendor/qrcode.js"></script>
   <script defer src="vendor/jsQR.js"></script>
-  <script defer src="app.js?v=6"></script>
+  <script defer src="app.js?v=7"></script>
 </head>
 <body>
   <header class="hero compact-hero">
@@ -149,7 +149,7 @@
             </div>
 
             <div class="input-group">
-              <input name="password" type="password" id="reg-pass" placeholder="Password (min 5 characters)" autocomplete="new-password" minlength="5" required>
+              <input name="password" type="password" id="reg-pass" placeholder="Password (min 4 characters)" autocomplete="new-password" minlength="4" required>
               <button type="button" class="input-icon toggle-pass" data-target="reg-pass" aria-label="Toggle password visibility">
                 <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8 -4 8 -11 8 -11 -8z"></path>
@@ -178,6 +178,7 @@
       <div id="club-dashboard-area" class="card glass-auth-card" hidden>
         <span class="side-light-circle left" aria-hidden="true"></span>
         <span class="side-light-circle right" aria-hidden="true"></span>
+        <div id="club-dash-msg" class="msg ok" style="display: none; margin-bottom: 16px; padding: 12px 14px; border-radius: 12px; background: rgba(121, 174, 68, 0.12); border: 1px solid var(--green);" role="status"></div>
         <div class="row between">
           <div>
             <p style="margin: 0; font-size: 13px; color: var(--muted);">Club Account</p>
