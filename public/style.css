@@ -32,6 +32,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   background: var(--navy);
   color-scheme: inherit;
@@ -1402,6 +1406,27 @@ summary:hover {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.rank-item.rank-gold .rank-num {
+  background: rgba(234, 179, 8, 0.2) !important;
+  border-color: #EAB308 !important;
+  color: #EAB308 !important;
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.25);
+}
+
+.rank-item.rank-silver .rank-num {
+  background: rgba(248, 250, 249, 0.2) !important;
+  border-color: #f8faf9 !important;
+  color: #f8faf9 !important;
+  box-shadow: 0 0 12px rgba(248, 250, 249, 0.2);
+}
+
+.rank-item.rank-bronze .rank-num {
+  background: rgba(223, 51, 49, 0.2) !important;
+  border-color: #df3331 !important;
+  color: #df3331 !important;
+  box-shadow: 0 0 12px rgba(223, 51, 49, 0.2);
 }
 
 .rank-info {
