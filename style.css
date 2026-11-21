@@ -156,12 +156,12 @@ header.hero {
 }
 
 .brand-center .main-logo {
-  width: 88px;
-  height: 88px;
+  width: 70px;
+  height: 70px;
   object-fit: contain;
-  border-radius: 20px;
+  border-radius: 18px;
   filter:
-    drop-shadow(0 0 20px rgba(121,174,68,0.6))
+    drop-shadow(0 0 18px rgba(121,174,68,0.6))
     drop-shadow(0 4px 14px rgba(0,0,0,0.45));
   transition: transform 0.3s ease;
   animation: logoPulse 3s ease-in-out infinite;
@@ -1840,9 +1840,9 @@ summary:hover {
   }
 
   .brand-center .main-logo {
-    width: 64px !important;
-    height: 64px !important;
-    border-radius: 16px !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 14px !important;
   }
 
   .brand-collab-logos .chess-collab-logo {
