@@ -1,4 +1,254 @@
-const API = "/api";
+const IS_STATIC_HOST = window.location.hostname.endsWith("github.io") || window.location.protocol === "file:";
+const API_BASE = IS_STATIC_HOST ? "" : "/api";
+
+const CLIENT_DB_KEY = "chess_championship_db_v2";
+
+const DEFAULT_LOCAL_CLUBS = [
+  { id: "club1", username: "ecogeeks", name: "Eco Geeks Club", password: "password123", slot: "T1", points: 0, wins: 0, draws: 0 },
+  { id: "club2", username: "elite", name: "Elite Chess Club", password: "password123", slot: "T2", points: 0, wins: 0, draws: 0 },
+  { id: "club3", username: "knights", name: "Knight Riders", password: "password123", slot: "T3", points: 0, wins: 0, draws: 0 },
+  { id: "club4", username: "grandmaster", name: "Grandmaster Club", password: "password123", slot: "T4", points: 0, wins: 0, draws: 0 },
+  { id: "club5", username: "tactical", name: "Tactical Pawns", password: "password123", slot: "T5", points: 0, wins: 0, draws: 0 },
+  { id: "club6", username: "vanguard", name: "Checkmate Vanguard", password: "password123", slot: "T6", points: 0, wins: 0, draws: 0 }
+];
+
+const clientStore = {
+  getDb() {
+    try {
+      const data = localStorage.getItem(CLIENT_DB_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed.clubs) && parsed.clubs.length > 0) return parsed;
+      }
+    } catch {}
+    const initDb = {
+      clubs: DEFAULT_LOCAL_CLUBS.map(c => ({ ...c })),
+      scans: [],
+      sessions: {}
+    };
+    this.saveDb(initDb);
+    return initDb;
+  },
+  saveDb(db) {
+    try {
+      localStorage.setItem(CLIENT_DB_KEY, JSON.stringify(db));
+    } catch {}
+  },
+  handle(path, { method = "GET", body = {} } = {}) {
+    const db = this.getDb();
+    const cleanPath = path.replace(/^\/?api\/?/, "").split("?")[0];
+
+    // 1. REGISTER
+    if (cleanPath === "register" && method === "POST") {
+      const rawName = (body.name || "").trim();
+      const rawUser = (body.username || "").trim();
+      const password = (body.password || "").trim();
+      const slot = (body.slot || "").trim().toUpperCase();
+
+      if (!rawName || !rawUser || !password) {
+        throw new Error("All fields are required.");
+      }
+      if (password.length < 4) {
+        throw new Error("Password must be at least 4 characters.");
+      }
+
+      const username = rawUser.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_.-]/g, "");
+      if (!username) throw new Error("Invalid username.");
+
+      if (db.clubs.some(c => (c.username || "").toLowerCase() === username || (c.id || "").toLowerCase() === username)) {
+        throw new Error("Username already taken. Please choose another.");
+      }
+
+      if (slot && ["T1","T2","T3","T4","T5","T6"].includes(slot)) {
+        const taken = db.clubs.find(c => c.slot === slot && !c.id.startsWith("club"));
+        if (taken) {
+          throw new Error(`Slot ${slot} is already assigned to ${taken.name}.`);
+        }
+      }
+
+      const newClub = {
+        id: username,
+        username: username,
+        name: rawName,
+        password: password,
+        slot: slot || "",
+        points: 0,
+        wins: 0,
+        draws: 0,
+        registeredAt: new Date().toISOString()
+      };
+
+      db.clubs.push(newClub);
+      const token = "local_tok_" + Math.random().toString(36).slice(2) + Date.now();
+      db.sessions[token] = { clubId: username, username, expiresAt: Date.now() + 86400000 * 7 };
+      this.saveDb(db);
+
+      return {
+        token,
+        user: username,
+        club: {
+          id: username,
+          name: rawName,
+          username: username,
+          slot: slot || "",
+          points: 0,
+          wins: 0,
+          draws: 0
+        }
+      };
+    }
+
+    // 2. LOGIN
+    if (cleanPath === "login" && method === "POST") {
+      const rawUser = (body.username || "").trim();
+      const pass = (body.password || "").trim();
+      const username = rawUser.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_.-]/g, "");
+
+      const club = db.clubs.find(c => 
+        (c.username || "").toLowerCase() === username || 
+        (c.id || "").toLowerCase() === username || 
+        (c.username || "").toLowerCase() === rawUser.toLowerCase()
+      );
+
+      if (!club || club.password !== pass) {
+        throw new Error("Invalid club username or password.");
+      }
+
+      const token = "local_tok_" + Math.random().toString(36).slice(2) + Date.now();
+      db.sessions[token] = { clubId: club.id, username: club.username || club.id, expiresAt: Date.now() + 86400000 * 7 };
+      this.saveDb(db);
+
+      return {
+        token,
+        user: club.username || club.id,
+        club: {
+          id: club.id,
+          name: club.name,
+          username: club.username || club.id,
+          slot: club.slot || "",
+          points: club.points || 0,
+          wins: club.wins || 0,
+          draws: club.draws || 0
+        }
+      };
+    }
+
+    // 3. ME (Profile)
+    if (cleanPath === "me") {
+      const tok = session.token;
+      const sess = tok ? db.sessions[tok] : null;
+      const clubId = sess ? sess.clubId : session.user;
+      const club = db.clubs.find(c => c.id === clubId || c.username === clubId) || db.clubs[0];
+      return {
+        club: {
+          id: club.id,
+          name: club.name,
+          username: club.username || club.id,
+          slot: club.slot || "",
+          points: club.points || 0,
+          wins: club.wins || 0,
+          draws: club.draws || 0
+        }
+      };
+    }
+
+    // 4. LEADERBOARD
+    if (cleanPath === "leaderboard") {
+      const sorted = [...db.clubs].sort((a, b) => (b.points || 0) - (a.points || 0));
+      return {
+        rows: sorted.map((c, i) => ({
+          id: c.id,
+          name: c.name,
+          username: c.username || c.id,
+          slot: c.slot || "",
+          points: c.points || 0,
+          wins: c.wins || 0,
+          draws: c.draws || 0,
+          rank: i + 1
+        }))
+      };
+    }
+
+    // 5. MY SCANS
+    if (cleanPath === "my-scans") {
+      const tok = session.token;
+      const sess = tok ? db.sessions[tok] : null;
+      const clubId = sess ? sess.clubId : session.user;
+      const clubScans = (db.scans || []).filter(s => s.clubId === clubId);
+      return { scans: clubScans };
+    }
+
+    // 6. SCAN
+    if (cleanPath === "scan" && method === "POST") {
+      const code = (body.code || "").trim();
+      const tok = session.token;
+      const sess = tok ? db.sessions[tok] : null;
+      const clubId = sess ? sess.clubId : session.user;
+      const club = db.clubs.find(c => c.id === clubId || c.username === clubId);
+      if (!club) throw new Error("Please log in to register a match.");
+
+      const isDraw = code.toLowerCase().includes("draw") || code.includes("+1");
+      const pts = isDraw ? 1 : 2;
+
+      club.points = (club.points || 0) + pts;
+      if (isDraw) {
+        club.draws = (club.draws || 0) + 1;
+      } else {
+        club.wins = (club.wins || 0) + 1;
+      }
+
+      const scanRec = {
+        id: "scan_" + Date.now(),
+        clubId: club.id,
+        clubName: club.name,
+        outcome: isDraw ? "draw" : "win",
+        points: pts,
+        status: "confirmed",
+        createdAt: new Date().toISOString()
+      };
+
+      if (!db.scans) db.scans = [];
+      db.scans.push(scanRec);
+      this.saveDb(db);
+
+      return {
+        ok: true,
+        outcome: scanRec.outcome,
+        points: pts,
+        totalPoints: club.points,
+        message: "Match registered successfully!"
+      };
+    }
+
+    // 7. CLUBS
+    if (cleanPath === "clubs") {
+      return { clubs: db.clubs };
+    }
+
+    // 8. ADMIN ACTIONS
+    if (cleanPath.startsWith("admin/")) {
+      if (cleanPath === "admin/challenges") {
+        return { challenges: [] };
+      }
+      if (cleanPath === "admin/wins") {
+        return { wins: db.scans || [] };
+      }
+      if (cleanPath === "admin/reset" && method === "POST") {
+        db.clubs.forEach(c => {
+          c.points = 0;
+          c.wins = 0;
+          c.draws = 0;
+        });
+        db.scans = [];
+        this.saveDb(db);
+        return { ok: true, message: "Tournament scores reset to 0." };
+      }
+    }
+
+    return { ok: true };
+  }
+};
+
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
@@ -49,6 +299,11 @@ const adminToken = {
 };
 
 async function api(path, { method = "GET", body, headers = {} } = {}) {
+  // If explicitly hosted on static provider (GitHub Pages or local file), route directly to local store
+  if (IS_STATIC_HOST) {
+    return clientStore.handle(path, { method, body });
+  }
+
   const reqHeaders = { "Content-Type": "application/json", ...headers };
   if (session.token) {
     reqHeaders["Authorization"] = `Bearer ${session.token}`;
@@ -57,22 +312,38 @@ async function api(path, { method = "GET", body, headers = {} } = {}) {
     reqHeaders["x-admin-token"] = adminToken.get();
   }
 
-  const res = await fetch(`${API}/${path}`, {
-    method,
-    headers: reqHeaders,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  try {
+    const res = await fetch(`${API_BASE}/${path}`, {
+      method,
+      headers: reqHeaders,
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Something went wrong.");
-  return data;
+    if (res.ok) {
+      return await res.json();
+    }
+
+    // 404 or 405 means API route is not served on this host -> fall back to clientStore
+    if (res.status === 404 || res.status === 405) {
+      return clientStore.handle(path, { method, body });
+    }
+
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Something went wrong.");
+  } catch (err) {
+    // Network failure or static host blocking POST -> fall back to clientStore
+    if (err.name === "TypeError" || String(err.message).includes("fetch") || String(err.message).includes("NetworkError")) {
+      return clientStore.handle(path, { method, body });
+    }
+    throw err;
+  }
 }
 
 function setMsg(el, text, ok = false) {
   if (!el) return;
   el.textContent = text;
   el.className = "msg " + (text ? (ok ? "ok" : "err") : "");
-  if (!text) el.style.display = "none";
+  el.style.display = text ? "block" : "none";
 }
 
 // ========================================================
@@ -287,8 +558,18 @@ async function loadClubScansLog() {
 $("#login-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target;
-  const username = form.username.value.trim().toLowerCase();
+  let username = form.username.value.trim().toLowerCase();
+  username = username.replace(/\s+/g, "_").replace(/[^a-z0-9_.-]/g, "");
   const password = form.password.value;
+
+  if (!username) {
+    setMsg(authMsg, "Please enter your club username.", false);
+    return;
+  }
+  if (!password) {
+    setMsg(authMsg, "Please enter your password.", false);
+    return;
+  }
 
   setMsg(authMsg, "Authenticating club...", true);
 
@@ -301,12 +582,18 @@ $("#login-form")?.addEventListener("submit", async (e) => {
 
     // Reveal main tabs
     if (mainNav) mainNav.hidden = false;
-    renderClubDash({ username: data.username, ...data.club });
+    await renderClubDash({ username: data.username, ...data.club });
 
-    // Instantly direct to Conditions section!
-    activateTab("conditions");
+    // Stay on My Club section and show active dashboard with welcome message!
+    activateTab("visitor");
+    const dashMsg = $("#club-dash-msg");
+    if (dashMsg) {
+      setMsg(dashMsg, `Welcome back, ${data.club?.name || data.username}! You are signed in.`, true);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     setMsg(authMsg, err.message, false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
 
@@ -321,14 +608,17 @@ $("#register-form")?.addEventListener("submit", async (e) => {
 
   if (!name) {
     setMsg(authMsg, "Please enter your club name.", false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   if (!username) {
-    setMsg(authMsg, "Please enter a club username.", false);
+    setMsg(authMsg, "Please enter a club username (letters, numbers, _).", false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   if (!password || password.length < 4) {
     setMsg(authMsg, "Password must be at least 4 characters.", false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
 
@@ -343,12 +633,18 @@ $("#register-form")?.addEventListener("submit", async (e) => {
 
     // Reveal main tabs
     if (mainNav) mainNav.hidden = false;
-    renderClubDash({ username: data.username, ...data.club });
+    await renderClubDash({ username: data.username, ...data.club });
 
-    // Instantly direct to Conditions section!
-    activateTab("conditions");
+    // Stay on My Club section and display the newly created account dashboard!
+    activateTab("visitor");
+    const dashMsg = $("#club-dash-msg");
+    if (dashMsg) {
+      setMsg(dashMsg, `Club account "${data.club?.name || data.username}" created successfully! Welcome to the championship.`, true);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     setMsg(authMsg, err.message, false);
+    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
 
@@ -685,11 +981,11 @@ function renderQRToElement(el, text, size = 190) {
   }
   // Static SVG fallback
   if (text === STD_WIN_CODE) {
-    el.innerHTML = `<img src="/win_qr.svg" alt="Winner QR (+2 pts)" style="width:${size}px; height:${size}px; display:block; margin:0 auto;"/>`;
+    el.innerHTML = `<img src="./win_qr.svg" alt="Winner QR (+2 pts)" style="width:${size}px; height:${size}px; display:block; margin:0 auto;"/>`;
     return;
   }
   if (text === STD_DRAW_CODE) {
-    el.innerHTML = `<img src="/draw_qr.svg" alt="Draw QR (+1 pt)" style="width:${size}px; height:${size}px; display:block; margin:0 auto;"/>`;
+    el.innerHTML = `<img src="./draw_qr.svg" alt="Draw QR (+1 pt)" style="width:${size}px; height:${size}px; display:block; margin:0 auto;"/>`;
     return;
   }
 }
