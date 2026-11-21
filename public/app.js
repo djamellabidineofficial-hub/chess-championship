@@ -350,11 +350,6 @@ $("#register-form")?.addEventListener("submit", async (e) => {
     authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  if (!slot) {
-    setMsg(authMsg, "Please select a tournament slot from T1 to T6.", false);
-    authMsg?.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
 
   setMsg(authMsg, "Creating club account...", true);
 

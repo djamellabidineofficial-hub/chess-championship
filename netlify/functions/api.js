@@ -356,15 +356,18 @@ exports.handler = async (event) => {
       if (password.length < 4) {
         return json(400, { error: "Password must be at least 4 characters." });
       }
-      if (!/^T[1-6]$/.test(slot)) {
-        return json(400, { error: "Please select a tournament slot from T1 to T6." });
+      if (slot && !/^T[1-6]$/.test(slot)) {
+        return json(400, { error: "Tournament slot must be between T1 and T6 (or leave blank for Open Club)." });
       }
       if (await s.get(`users/${username}`, { type: "json" })) {
         return json(409, { error: `Username "${username}" is already registered. If this is your club, please Sign In, or choose another username.` });
       }
-      const existingClubs = await listAll("clubs/");
-      if (existingClubs.some((club) => club.slot === slot)) {
-        return json(409, { error: `${slot} is already assigned to another club. Please choose an available slot.` });
+      if (slot) {
+        const existingClubs = await listAll("clubs/");
+        const customClaim = existingClubs.find((c) => c.slot === slot && !c.username.startsWith("club") && c.username !== username);
+        if (customClaim) {
+          return json(409, { error: `Tournament slot ${slot} is already represented by "${customClaim.name}". Please choose another slot or select Open Club.` });
+        }
       }
 
       const { salt, hash } = hashPassword(password);

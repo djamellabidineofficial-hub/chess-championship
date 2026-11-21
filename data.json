@@ -17,7 +17,8 @@
     "color": "#F59E0B",
     "salt": "ada95632039a8c578f54c14051457d19",
     "hash": "d0788d32f6811eb051f95c3c577af4a206b91b6174f4776e48ee71617ad381a7eb3c1a67779f3332e0159db76c8a80bbb1e694ed87d484232d72f2abdcbb343e",
-    "createdAt": 1795198514587
+    "createdAt": 1795198514587,
+    "slot": "T1"
   },
   "users/club1": {
     "username": "club1",
@@ -26,7 +27,8 @@
     "emblem": "♞",
     "salt": "ada95632039a8c578f54c14051457d19",
     "hash": "d0788d32f6811eb051f95c3c577af4a206b91b6174f4776e48ee71617ad381a7eb3c1a67779f3332e0159db76c8a80bbb1e694ed87d484232d72f2abdcbb343e",
-    "createdAt": 1795198514587
+    "createdAt": 1795198514587,
+    "slot": "T1"
   },
   "clubs/club2": {
     "id": "club2",
@@ -36,7 +38,8 @@
     "color": "#EAB308",
     "salt": "cddadf5b2b2837c163d4626199b47b37",
     "hash": "84dff228d11ef6c2d4132aea8602ab097a2b522cb9168805c42c4d6fa917348926b75d37a590fa56836bfce295d97dc2193b5e687ce6451d49f79185510d5c0d",
-    "createdAt": 1795198514647
+    "createdAt": 1795198514647,
+    "slot": "T2"
   },
   "users/club2": {
     "username": "club2",
@@ -45,7 +48,8 @@
     "emblem": "♚",
     "salt": "cddadf5b2b2837c163d4626199b47b37",
     "hash": "84dff228d11ef6c2d4132aea8602ab097a2b522cb9168805c42c4d6fa917348926b75d37a590fa56836bfce295d97dc2193b5e687ce6451d49f79185510d5c0d",
-    "createdAt": 1795198514647
+    "createdAt": 1795198514647,
+    "slot": "T2"
   },
   "clubs/club3": {
     "id": "club3",
@@ -55,7 +59,8 @@
     "color": "#A855F7",
     "salt": "192924bbe4fc46d151128a20a6bc76ab",
     "hash": "1bcf5e48ca70d0674bbedf736a225dd4067d5f401d1b0062bf0f5f561976c7cd7ba7855439e840a3549146ae25f4e5169f9d41942acadf9eff6cf5fb424aebaf",
-    "createdAt": 1795198514708
+    "createdAt": 1795198514708,
+    "slot": "T3"
   },
   "users/club3": {
     "username": "club3",
@@ -64,7 +69,8 @@
     "emblem": "♛",
     "salt": "192924bbe4fc46d151128a20a6bc76ab",
     "hash": "1bcf5e48ca70d0674bbedf736a225dd4067d5f401d1b0062bf0f5f561976c7cd7ba7855439e840a3549146ae25f4e5169f9d41942acadf9eff6cf5fb424aebaf",
-    "createdAt": 1795198514708
+    "createdAt": 1795198514708,
+    "slot": "T3"
   },
   "clubs/club4": {
     "id": "club4",
@@ -74,7 +80,8 @@
     "color": "#3B82F6",
     "salt": "9202148273021d44ea0b0e368eccbeda",
     "hash": "f6d89ae30c7c85cea68a77fab2486de9a8cf45b3a6a6e5bebca2afaa53d0b4908910f2a5ce13afde27168195a5cdb259286d3dd60d76fd5726d369b1c61f76e0",
-    "createdAt": 1795198514772
+    "createdAt": 1795198514772,
+    "slot": "T4"
   },
   "users/club4": {
     "username": "club4",
@@ -83,7 +90,8 @@
     "emblem": "♜",
     "salt": "9202148273021d44ea0b0e368eccbeda",
     "hash": "f6d89ae30c7c85cea68a77fab2486de9a8cf45b3a6a6e5bebca2afaa53d0b4908910f2a5ce13afde27168195a5cdb259286d3dd60d76fd5726d369b1c61f76e0",
-    "createdAt": 1795198514772
+    "createdAt": 1795198514772,
+    "slot": "T4"
   },
   "clubs/club5": {
     "id": "club5",
@@ -93,7 +101,8 @@
     "color": "#94A3B8",
     "salt": "a8c51b8e2748fa7045be2d2cccdf8e58",
     "hash": "c21018b318623da9b14d0fa427f4b185534e0760c15f1554af1edc6bdc7108cb8b00e90da7d0505995ab1b39ea4fcbeab137085ef71716e1642949eedc3e8663",
-    "createdAt": 1795198514841
+    "createdAt": 1795198514841,
+    "slot": "T5"
   },
   "users/club5": {
     "username": "club5",
@@ -102,7 +111,8 @@
     "emblem": "♝",
     "salt": "a8c51b8e2748fa7045be2d2cccdf8e58",
     "hash": "c21018b318623da9b14d0fa427f4b185534e0760c15f1554af1edc6bdc7108cb8b00e90da7d0505995ab1b39ea4fcbeab137085ef71716e1642949eedc3e8663",
-    "createdAt": 1795198514841
+    "createdAt": 1795198514841,
+    "slot": "T5"
   },
   "clubs/club6": {
     "id": "club6",
@@ -112,7 +122,8 @@
     "color": "#10B981",
     "salt": "400a0637c4a507f6cb577bdaecbe1ea0",
     "hash": "27c693c664d418c92bfaf138a4404004c5b7c1f7c1871251670c01a376a0a2134ec3f83d7e6142061103614e510c92a560e83602ba932f49373ff7053b80299f",
-    "createdAt": 1795198514909
+    "createdAt": 1795198514909,
+    "slot": "T6"
   },
   "users/club6": {
     "username": "club6",
@@ -121,7 +132,8 @@
     "emblem": "♟",
     "salt": "400a0637c4a507f6cb577bdaecbe1ea0",
     "hash": "27c693c664d418c92bfaf138a4404004c5b7c1f7c1871251670c01a376a0a2134ec3f83d7e6142061103614e510c92a560e83602ba932f49373ff7053b80299f",
-    "createdAt": 1795198514909
+    "createdAt": 1795198514909,
+    "slot": "T6"
   },
   "sessions/426bdb7ba301eea994c149e484dfea0f88192749cdc52a09f31654319738d2f2": {
     "username": "club1",
@@ -541,5 +553,92 @@
     "clubEmblem": "♟",
     "clubColor": "#F59E0B",
     "createdAt": 1795258419576
+  },
+  "users/knightriders": {
+    "username": "knightriders",
+    "name": "Knight Riders Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "4aa4ab038e5732b33da0695a768d9cc2",
+    "hash": "d39e591323224a37b1a3c6835698d98c4d9c1d54ca51a592a7646557a46ff8d6f4241fed86cd72e19fba21ae14778903358d7ca17aac6004c5db70be84e20705",
+    "createdAt": 1795259698779
+  },
+  "clubs/knightriders": {
+    "id": "knightriders",
+    "username": "knightriders",
+    "name": "Knight Riders Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "4aa4ab038e5732b33da0695a768d9cc2",
+    "hash": "d39e591323224a37b1a3c6835698d98c4d9c1d54ca51a592a7646557a46ff8d6f4241fed86cd72e19fba21ae14778903358d7ca17aac6004c5db70be84e20705",
+    "createdAt": 1795259698797
+  },
+  "sessions/678ca1e8e913d3e4f73f7aa44fdca69e3ffa5a8450e6e383080d8487e4b23b67": {
+    "username": "knightriders",
+    "clubId": "knightriders",
+    "clubName": "Knight Riders Club",
+    "clubEmblem": "♟",
+    "clubColor": "#F59E0B",
+    "createdAt": 1795259698815
+  },
+  "users/betabears": {
+    "username": "betabears",
+    "name": "T2 — Beta Bears Chess",
+    "slot": "T2",
+    "emblem": "♚",
+    "color": "#EAB308",
+    "salt": "0735d457ab183b64d389e30a27eb9c01",
+    "hash": "4b11481d8130fa35c5876e450f4330b31f63ce9b6ef957ffa45e7bdb349126eeff12851c31328162df2ffedec98be07ae20fedaa8d24f4985b3633829201944c",
+    "createdAt": 1795259699098
+  },
+  "clubs/betabears": {
+    "id": "betabears",
+    "username": "betabears",
+    "name": "T2 — Beta Bears Chess",
+    "slot": "T2",
+    "emblem": "♚",
+    "color": "#EAB308",
+    "salt": "0735d457ab183b64d389e30a27eb9c01",
+    "hash": "4b11481d8130fa35c5876e450f4330b31f63ce9b6ef957ffa45e7bdb349126eeff12851c31328162df2ffedec98be07ae20fedaa8d24f4985b3633829201944c",
+    "createdAt": 1795259699113
+  },
+  "sessions/46dd1b5f694e50b1a61bd6cfe8563fa36027d5d4462cc8ec39e30dfcdd90a15c": {
+    "username": "betabears",
+    "clubId": "betabears",
+    "clubName": "T2 — Beta Bears Chess",
+    "clubEmblem": "♚",
+    "clubColor": "#EAB308",
+    "createdAt": 1795259699136
+  },
+  "users/gmclub": {
+    "username": "gmclub",
+    "name": "Grandmaster Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "6abf41ec7a227f84e729d80507214c14",
+    "hash": "68063964f568e2958303351c9905ad24feff860add1ac1360dd324fff58fc93666d9e0551716e401aeee0dadc61687dd7a1155989a05fd786bdd82dee00f9454",
+    "createdAt": 1795259763673
+  },
+  "clubs/gmclub": {
+    "id": "gmclub",
+    "username": "gmclub",
+    "name": "Grandmaster Club",
+    "slot": "",
+    "emblem": "♟",
+    "color": "#F59E0B",
+    "salt": "6abf41ec7a227f84e729d80507214c14",
+    "hash": "68063964f568e2958303351c9905ad24feff860add1ac1360dd324fff58fc93666d9e0551716e401aeee0dadc61687dd7a1155989a05fd786bdd82dee00f9454",
+    "createdAt": 1795259763729
+  },
+  "sessions/6790c6eb23c92b8a38032d7736374395a8577d160fcc3047e84e8e2183b5862e": {
+    "username": "gmclub",
+    "clubId": "gmclub",
+    "clubName": "Grandmaster Club",
+    "clubEmblem": "♟",
+    "clubColor": "#F59E0B",
+    "createdAt": 1795259763756
   }
 }
