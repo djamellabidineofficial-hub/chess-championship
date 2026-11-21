@@ -1,0 +1,1334 @@
+const API = "/api";
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+// Enforce Dark Navy theme
+document.documentElement.setAttribute("data-theme", "navy");
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
+}
+
+function formatPoints(pts) {
+  return Number(pts).toLocaleString("en-US");
+}
+
+const session = {
+  get token() { try { return localStorage.getItem("chess_token"); } catch { return null; } },
+  set token(v) { try { v ? localStorage.setItem("chess_token", v) : localStorage.removeItem("chess_token"); } catch {} },
+  get user() { try { return localStorage.getItem("chess_user"); } catch { return null; } },
+  set user(v) { try { v ? localStorage.setItem("chess_user", v) : localStorage.removeItem("chess_user"); } catch {} },
+  get club() {
+    try {
+      const c = localStorage.getItem("chess_club_info");
+      return c ? JSON.parse(c) : null;
+    } catch { return null; }
+  },
+  set club(v) {
+    try {
+      v ? localStorage.setItem("chess_club_info", JSON.stringify(v)) : localStorage.removeItem("chess_club_info");
+    } catch {}
+  },
+};
+
+const adminToken = {
+  get() { try { return sessionStorage.getItem("chess_admin_token") || localStorage.getItem("chess_admin_token"); } catch { return null; } },
+  set(v) {
+    try {
+      if (v) {
+        sessionStorage.setItem("chess_admin_token", v);
+        localStorage.setItem("chess_admin_token", v);
+      } else {
+        sessionStorage.removeItem("chess_admin_token");
+        localStorage.removeItem("chess_admin_token");
+      }
+    } catch {}
+  },
+};
+
+async function api(path, { method = "GET", body, headers = {} } = {}) {
+  const reqHeaders = { "Content-Type": "application/json", ...headers };
+  if (session.token) {
+    reqHeaders["Authorization"] = `Bearer ${session.token}`;
+  }
+  if (adminToken.get()) {
+    reqHeaders["x-admin-token"] = adminToken.get();
+  }
+
+  const res = await fetch(`${API}/${path}`, {
+    method,
+    headers: reqHeaders,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Something went wrong.");
+  return data;
+}
+
+function setMsg(el, text, ok = false) {
+  if (!el) return;
+  el.textContent = text;
+  el.className = "msg " + (text ? (ok ? "ok" : "err") : "");
+  if (!text) el.style.display = "none";
+}
+
+// ========================================================
+// 3-DOTS KEBAB MENU (ADMIN ACCESS)
+// ========================================================
+const kebabBtn = $("#kebab-btn");
+const kebabMenu = $("#kebab-menu");
+
+if (kebabBtn && kebabMenu) {
+  kebabBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isHidden = kebabMenu.hidden;
+    kebabMenu.hidden = !isHidden;
+    kebabBtn.setAttribute("aria-expanded", String(isHidden));
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!kebabMenu.contains(e.target) && !kebabBtn.contains(e.target)) {
+      kebabMenu.hidden = true;
+      kebabBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+$("#menu-admin-btn")?.addEventListener("click", () => {
+  activateTab("admin");
+});
+
+// ========================================================
+// TABS & NAVIGATION
+// ========================================================
+function activateTab(tabId) {
+  // If attempting to scan while not logged in, direct to login
+  if (tabId === "scan" && !session.token) {
+    tabId = "visitor";
+    setMsg(authMsg, "Please sign in to scan match QR codes.", false);
+  }
+
+  $$(".tabs .tab").forEach((b) => {
+    b.classList.toggle("active", b.dataset.tab === tabId);
+  });
+  $$(".panel").forEach((p) => {
+    p.classList.toggle("active", p.id === tabId);
+  });
+
+  if (kebabBtn) {
+    kebabBtn.classList.toggle("on", tabId === "admin");
+    kebabBtn.setAttribute("aria-expanded", "false");
+  }
+  if (kebabMenu) {
+    kebabMenu.hidden = true;
+  }
+
+  if (tabId === "admin") checkAdminAuth();
+  if (tabId === "leaderboard") loadLeaderboard();
+  if (tabId === "visitor") checkClubSession();
+  if (tabId === "scan") updateScanClubBadge();
+}
+
+$$(".tab").forEach((btn) => {
+  btn.addEventListener("click", () => activateTab(btn.dataset.tab));
+});
+
+// Conditions language switcher (English or Arabic in corner)
+function switchConditionsLang(lang) {
+  const enBox = document.getElementById("conditions-content-en");
+  const arBox = document.getElementById("conditions-content-ar");
+  const btnEn = document.getElementById("lang-btn-en");
+  const btnAr = document.getElementById("lang-btn-ar");
+
+  if (!enBox || !arBox) return;
+
+  btnEn?.classList.toggle("active", lang === "en");
+  btnAr?.classList.toggle("active", lang === "ar");
+
+  if (lang === "ar") {
+    enBox.hidden = true;
+    arBox.hidden = false;
+  } else {
+    enBox.hidden = false;
+    arBox.hidden = true;
+  }
+}
+window.switchConditionsLang = switchConditionsLang;
+
+document.getElementById("lang-btn-en")?.addEventListener("click", () => switchConditionsLang("en"));
+document.getElementById("lang-btn-ar")?.addEventListener("click", () => switchConditionsLang("ar"));
+
+// Password toggles
+$$(".toggle-pass").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = $(`#${btn.dataset.target}`);
+    if (target) {
+      const isPass = target.type === "password";
+      target.type = isPass ? "text" : "password";
+      const eyeOpen = btn.querySelector(".eye-open");
+      const eyeClosed = btn.querySelector(".eye-closed");
+      if (eyeOpen && eyeClosed) {
+        eyeOpen.classList.toggle("hidden", !isPass);
+        eyeClosed.classList.toggle("hidden", isPass);
+      }
+    }
+  });
+});
+
+// ========================================================
+// 1. VISITOR / CLUB LOGIN & DASHBOARD
+// ========================================================
+const mainNav = $("#main-nav");
+const authBox = $("#auth");
+const clubDashBox = $("#club-dashboard-area");
+const loginView = $("#login-view");
+const registerView = $("#register-view");
+const authMsg = $("#auth-msg");
+
+const tabBtnSignIn = $("#tab-btn-signin");
+const tabBtnSignUp = $("#tab-btn-signup");
+
+function showSignInMode() {
+  if (loginView) loginView.hidden = false;
+  if (registerView) registerView.hidden = true;
+  tabBtnSignIn?.classList.add("active");
+  tabBtnSignUp?.classList.remove("active");
+  setMsg(authMsg, "");
+}
+
+function showSignUpMode() {
+  if (loginView) loginView.hidden = true;
+  if (registerView) registerView.hidden = false;
+  tabBtnSignUp?.classList.add("active");
+  tabBtnSignIn?.classList.remove("active");
+  setMsg(authMsg, "");
+}
+
+tabBtnSignIn?.addEventListener("click", showSignInMode);
+tabBtnSignUp?.addEventListener("click", showSignUpMode);
+$("#go-to-register")?.addEventListener("click", showSignUpMode);
+$("#go-to-login")?.addEventListener("click", showSignInMode);
+
+// Slot auto-hint
+async function checkClubSession() {
+  if (!session.token) {
+    if (authBox) authBox.hidden = false;
+    if (clubDashBox) clubDashBox.hidden = true;
+    return;
+  }
+
+  try {
+    const me = await api("me");
+    renderClubDash(me.user);
+  } catch {
+    session.token = null;
+    session.user = null;
+    session.club = null;
+    if (authBox) authBox.hidden = false;
+    if (clubDashBox) clubDashBox.hidden = true;
+  }
+}
+
+async function renderClubDash(user) {
+  if (authBox) authBox.hidden = true;
+  if (clubDashBox) clubDashBox.hidden = false;
+
+  $("#club-display-name").textContent = user.name || user.username;
+  $("#who").textContent = `@${user.username}`;
+  $("#club-dash-pts").textContent = user.points || 0;
+
+  // Standings rank
+  try {
+    const lb = await api("leaderboard");
+    const rankInfo = lb.rows?.find((r) => r.username === user.username);
+    if (rankInfo) {
+      $("#club-dash-rank").textContent = `#${rankInfo.place}`;
+      $("#club-dash-wins").textContent = rankInfo.wins;
+      $("#club-dash-draws").textContent = rankInfo.draws;
+    }
+  } catch {}
+
+  loadClubScansLog();
+}
+
+async function loadClubScansLog() {
+  const container = $("#club-scans-log");
+  if (!container) return;
+
+  try {
+    const data = await api("my-scans");
+    const scans = data.scans || [];
+    if (scans.length === 0) {
+      container.innerHTML = `<p class="hint" style="text-align: center; margin: 8px 0;">No matches recorded yet. Call the arbiter after your game and scan your result!</p>`;
+      return;
+    }
+
+    container.innerHTML = scans
+      .map((s) => {
+        const isWin = s.outcome === "win" || s.points === 2;
+        const timeStr = s.createdAt ? new Date(s.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+        return `
+        <div class="win">
+          <div>
+            <strong>${isWin ? "WIN (+2 PTS)" : "DRAW (+1 PT)"} - ${escapeHtml(s.challenge || "Match")}</strong>
+            <div style="font-size: 11px; color: var(--muted);">${timeStr}</div>
+          </div>
+          <span class="badge ${s.status === "confirmed" ? "confirmed" : s.status === "rejected" ? "rejected" : "pending"}">${escapeHtml(s.status || "confirmed")}</span>
+        </div>
+      `;
+      })
+      .join("");
+  } catch {}
+}
+
+$("#login-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const username = form.username.value.trim().toLowerCase();
+  const password = form.password.value;
+
+  setMsg(authMsg, "Authenticating club...", true);
+
+  try {
+    const data = await api("login", { method: "POST", body: { username, password } });
+    session.token = data.token;
+    session.user = data.username;
+    session.club = data.club;
+    setMsg(authMsg, "");
+
+    // Reveal main tabs
+    if (mainNav) mainNav.hidden = false;
+    renderClubDash({ username: data.username, ...data.club });
+
+    // Instantly direct to Conditions section!
+    activateTab("conditions");
+  } catch (err) {
+    setMsg(authMsg, err.message, false);
+  }
+});
+
+$("#register-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  let username = form.username.value.trim().toLowerCase();
+  username = username.replace(/\s+/g, "_").replace(/[^a-z0-9_.-]/g, "");
+  const name = form.name.value.trim();
+  const password = form.password.value;
+  const slot = form.slot ? form.slot.value : "";
+
+  if (!name) {
+    setMsg(authMsg, "Please enter your club name.", false);
+    return;
+  }
+  if (!username) {
+    setMsg(authMsg, "Please enter a club username.", false);
+    return;
+  }
+  if (!password || password.length < 4) {
+    setMsg(authMsg, "Password must be at least 4 characters.", false);
+    return;
+  }
+
+  setMsg(authMsg, "Creating club account...", true);
+
+  try {
+    const data = await api("register", { method: "POST", body: { username, name, password, slot } });
+    session.token = data.token;
+    session.user = data.username;
+    session.club = data.club;
+    setMsg(authMsg, "");
+
+    // Reveal main tabs
+    if (mainNav) mainNav.hidden = false;
+    renderClubDash({ username: data.username, ...data.club });
+
+    // Instantly direct to Conditions section!
+    activateTab("conditions");
+  } catch (err) {
+    setMsg(authMsg, err.message, false);
+  }
+});
+
+$("#logout")?.addEventListener("click", () => {
+  session.token = null;
+  session.user = null;
+  session.club = null;
+  if (authBox) authBox.hidden = false;
+  if (clubDashBox) clubDashBox.hidden = true;
+  showSignInMode();
+  activateTab("visitor");
+  setMsg(authMsg, "You have been logged out.", true);
+});
+
+// ========================================================
+// 2. SCANNER ENGINE
+// ========================================================
+const startScanBtn = $("#start-scan");
+const stopScanBtn = $("#stop-scan");
+const videoWrap = $(".video-wrap");
+const video = $("#video");
+const manualSubmit = $("#manual-submit");
+const manualCode = $("#manual-code");
+const scanMsg = $("#scan-msg");
+
+const codeResult = $("#code-result");
+const resultSuccess = $("#result-success");
+const resultError = $("#result-error");
+const successTitle = $("#success-title");
+const successDesc = $("#success-desc");
+const successPoints = $("#success-points");
+const errorDesc = $("#error-desc");
+const closeResultBtn = $("#close-result");
+
+function updateScanClubBadge() {
+  const badge = $("#scanner-club-badge");
+  if (badge) badge.remove();
+}
+
+closeResultBtn?.addEventListener("click", () => {
+  if (codeResult) codeResult.hidden = true;
+});
+
+function showScanSuccess(win, pts, challengeName) {
+  if (!codeResult) return;
+  codeResult.hidden = false;
+  if (resultError) resultError.hidden = true;
+  if (resultSuccess) resultSuccess.hidden = false;
+
+  const isWin = pts === 2 || win?.outcome === "win";
+  const isPending = win?.status === "pending";
+
+  const resultTag = resultSuccess.querySelector(".result-tag");
+  if (resultTag) {
+    resultTag.textContent = isPending ? "SUBMISSION PENDING ARBITER CONFIRMATION" : "CODE VERIFIED";
+  }
+
+  if (successTitle) {
+    successTitle.textContent = isWin
+      ? (isPending ? "VICTORY SUBMITTED!" : "VICTORY VERIFIED!")
+      : (isPending ? "DRAW SUBMITTED!" : "DRAW REGISTERED!");
+  }
+  if (successDesc) {
+    successDesc.textContent = isPending
+      ? `Match recorded for ${challengeName || "Chess Game"}. Points will appear on the Leaderboard once confirmed by the Arbiter.`
+      : `Match points successfully recorded for ${challengeName || "Chess Game"}!`;
+  }
+  if (successPoints) {
+    successPoints.textContent = isPending ? `+${pts} Points (Pending Approval)` : `+${pts} Points Added to Leaderboard!`;
+  }
+
+  codeResult.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function showScanError(msg) {
+  if (!codeResult) return;
+  codeResult.hidden = false;
+  if (resultSuccess) resultSuccess.hidden = true;
+  if (resultError) resultError.hidden = false;
+
+  if (errorDesc) errorDesc.textContent = msg || "The entered code does not match any active game challenge or was already claimed.";
+  codeResult.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+let scanStream = null;
+let scanTimer = null;
+
+startScanBtn?.addEventListener("click", async () => {
+  if (!session.token) {
+    setMsg(scanMsg, "Please log in with your club account first before scanning.", false);
+    activateTab("visitor");
+    return;
+  }
+
+  setMsg(scanMsg, "");
+  if (!navigator.mediaDevices?.getUserMedia) {
+    setMsg(scanMsg, "Camera access not supported on this browser. Please paste the code below.");
+    return;
+  }
+
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+    });
+    if (video) {
+      video.srcObject = scanStream;
+      video.play();
+    }
+    if (videoWrap) videoWrap.hidden = false;
+
+    scanTimer = setInterval(() => {
+      if (video && video.readyState === video.HAVE_ENOUGH_DATA && window.jsQR) {
+        const c = document.createElement("canvas");
+        c.width = video.videoWidth;
+        c.height = video.videoHeight;
+        const ctx = c.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(video, 0, 0, c.width, c.height);
+        const imgData = ctx.getImageData(0, 0, c.width, c.height);
+        const found = window.jsQR(imgData.data, imgData.width, imgData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        if (found && found.data) {
+          stopScanner();
+          submitScanCode(found.data);
+        }
+      }
+    }, 250);
+  } catch (err) {
+    setMsg(scanMsg, "Could not open camera. Please allow permissions or paste code below.");
+  }
+});
+
+function stopScanner() {
+  if (scanTimer) {
+    clearInterval(scanTimer);
+    scanTimer = null;
+  }
+  if (scanStream) {
+    scanStream.getTracks().forEach((t) => t.stop());
+    scanStream = null;
+  }
+  if (videoWrap) videoWrap.hidden = true;
+}
+
+stopScanBtn?.addEventListener("click", stopScanner);
+
+manualSubmit?.addEventListener("click", () => {
+  const code = manualCode ? manualCode.value.trim() : "";
+  if (!code) {
+    setMsg(scanMsg, "Please paste or type a code first.");
+    return;
+  }
+  if (!session.token) {
+    setMsg(scanMsg, "Please log in with your club account first.");
+    activateTab("visitor");
+    return;
+  }
+  submitScanCode(code);
+  if (manualCode) manualCode.value = "";
+});
+
+async function submitScanCode(code) {
+  setMsg(scanMsg, "Verifying match code with arbiter...", true);
+  try {
+    const data = await api("scan", { method: "POST", body: { code } });
+    setMsg(scanMsg, "");
+    showScanSuccess(data.win, data.points, data.challenge);
+    checkClubSession();
+    loadLeaderboard();
+  } catch (err) {
+    setMsg(scanMsg, err.message, false);
+    showScanError(err.message);
+  }
+}
+
+$("#check-win")?.addEventListener("click", () => {
+  activateTab("visitor");
+});
+
+// ========================================================
+// 3. LEADERBOARD & PODIUM
+// ========================================================
+async function loadLeaderboard() {
+  const podiumEl = $("#podium-area");
+  const listEl = $("#ranking-list");
+  const countEl = $("#members-count");
+  const msgEl = $("#leaderboard-msg");
+
+  try {
+    const data = await api("leaderboard").catch(() => ({ rows: [] }));
+    const rows = (data && data.rows && Array.isArray(data.rows)) ? data.rows : [];
+
+    setMsg(msgEl, "");
+    if (countEl) countEl.textContent = `${rows.length} clubs competing`;
+
+    const top1 = rows[0] || null;
+    const top2 = rows.length > 1 ? rows[1] : null;
+    const top3 = rows.length > 2 ? rows[2] : null;
+
+    if (podiumEl) {
+      podiumEl.innerHTML = `
+        <!-- 2nd Place: Left (Snow White) -->
+        <div class="podium-col col-2">
+          <div class="podium-user">
+            <b class="user-name">${top2 ? escapeHtml(top2.name) : "-"}</b>
+            <span class="user-pts">${top2 ? formatPoints(top2.points) : "0"} pts</span>
+          </div>
+          <div class="podium-pillar pillar-2">2</div>
+        </div>
+
+        <!-- 1st Place: Center (Leaf Green) -->
+        <div class="podium-col col-1">
+          <div class="podium-user">
+            <b class="user-name">${top1 ? escapeHtml(top1.name) : "-"}</b>
+            <span class="user-pts">${top1 ? formatPoints(top1.points) : "0"} pts</span>
+          </div>
+          <div class="podium-pillar pillar-1">1</div>
+        </div>
+
+        <!-- 3rd Place: Right (Fire Red) -->
+        <div class="podium-col col-3">
+          <div class="podium-user">
+            <b class="user-name">${top3 ? escapeHtml(top3.name) : "-"}</b>
+            <span class="user-pts">${top3 ? formatPoints(top3.points) : "0"} pts</span>
+          </div>
+          <div class="podium-pillar pillar-3">3</div>
+        </div>
+      `;
+    }
+
+    // Remaining clubs ranking list (places 4 and below; places 1, 2, 3 are displayed on the podium above and not repeated)
+    if (listEl) {
+      const remainingRows = rows.slice(3);
+      if (remainingRows.length === 0) {
+        listEl.innerHTML = `<p class="hint" style="text-align: center; padding: 16px 0; margin: 0;">Top clubs displayed on the podium above.</p>`;
+      } else {
+        listEl.innerHTML = remainingRows
+          .map((r) => {
+            return `
+            <div class="ranking-row" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 15px; font-weight: 800; color: var(--muted); width: 28px; text-align: center;">#${r.place}</span>
+                <div>
+                  <strong style="font-size: 14px; color: var(--snow); display: block;">${escapeHtml(r.name)}</strong>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="badge confirmed" style="font-size: 13px; font-weight: 800;">${formatPoints(r.points)} PTS</span>
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+      }
+    }
+  } catch (err) {
+    setMsg(msgEl, "Could not load standings.");
+  }
+}
+
+$("#refresh-leaderboard")?.addEventListener("click", loadLeaderboard);
+
+// ========================================================
+// 4. ADMIN & ARBITER SECTION (ACCESSED VIA 3-POINTS)
+// ========================================================
+const adminLoginBox = $("#admin-login");
+const adminAreaBox = $("#admin-area");
+const adminLoginMsg = $("#admin-login-msg");
+const adminPass = $("#admin-pass");
+
+function checkAdminAuth() {
+  const token = adminToken.get();
+  if (!token) {
+    if (adminLoginBox) adminLoginBox.hidden = false;
+    if (adminAreaBox) adminAreaBox.hidden = true;
+  } else {
+    if (adminLoginBox) adminLoginBox.hidden = true;
+    if (adminAreaBox) adminAreaBox.hidden = false;
+    loadAdmin();
+  }
+}
+
+$("#admin-login-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const token = adminPass ? adminPass.value.trim() : "";
+  if (!token) return;
+
+  adminToken.set(token);
+  setMsg(adminLoginMsg, "Verifying token...", true);
+
+  try {
+    await api("admin/challenges");
+    setMsg(adminLoginMsg, "");
+    checkAdminAuth();
+  } catch {
+    adminToken.set(null);
+    setMsg(adminLoginMsg, "Invalid password. Enter the arbiter admin password.", false);
+  }
+});
+
+$("#admin-logout")?.addEventListener("click", () => {
+  adminToken.set(null);
+  checkAdminAuth();
+});
+
+$("#refresh-admin")?.addEventListener("click", loadAdmin);
+
+// Standard Tournament QR Codes (For all rounds)
+const STD_WIN_CODE = "CHESS-WIN-2PTS";
+const STD_DRAW_CODE = "CHESS-DRAW-1PT";
+
+// Universal QR Code renderer (works with window.qrcode or SVG fallback)
+function renderQRToElement(el, text, size = 190) {
+  if (typeof el === "string") el = document.getElementById(el);
+  if (!el || !text) return;
+  if (typeof window.qrcode === "function") {
+    try {
+      const qr = window.qrcode(0, "M");
+      qr.addData(String(text));
+      qr.make();
+      const cellSize = Math.max(3, Math.floor(size / 30));
+      el.innerHTML = qr.createSvgTag(cellSize, 8);
+      const svg = el.querySelector("svg");
+      if (svg) {
+        svg.style.width = size + "px";
+        svg.style.height = size + "px";
+        svg.style.display = "block";
+        svg.style.margin = "0 auto";
+      }
+      return;
+    } catch (e) {
+      console.warn("QR SVG render error:", e);
+    }
+  }
+  // Static SVG fallback
+  if (text === STD_WIN_CODE) {
+    el.innerHTML = `<img src="/win_qr.svg" alt="Winner QR (+2 pts)" style="width:${size}px; height:${size}px; display:block; margin:0 auto;"/>`;
+    return;
+  }
+  if (text === STD_DRAW_CODE) {
+    el.innerHTML = `<img src="/draw_qr.svg" alt="Draw QR (+1 pt)" style="width:${size}px; height:${size}px; display:block; margin:0 auto;"/>`;
+    return;
+  }
+}
+
+// Global window.QRCode constructor compatibility
+window.QRCode = function (holder, options) {
+  const text = typeof options === "string" ? options : options?.text || "";
+  const size = options?.width || 190;
+  renderQRToElement(holder, text, size);
+};
+window.QRCode.CorrectLevel = { L: "L", M: "M", Q: "Q", H: "H" };
+
+function renderStandardQRs() {
+  const winHolder = document.getElementById("standard-win-holder");
+  const drawHolder = document.getElementById("standard-draw-holder");
+  const projWin = document.getElementById("projector-win-holder");
+  const projDraw = document.getElementById("projector-draw-holder");
+
+  if (winHolder && !winHolder.querySelector("img") && !winHolder.querySelector("svg")) {
+    renderQRToElement(winHolder, STD_WIN_CODE, 190);
+  }
+  if (drawHolder && !drawHolder.querySelector("img") && !drawHolder.querySelector("svg")) {
+    renderQRToElement(drawHolder, STD_DRAW_CODE, 190);
+  }
+  if (projWin && !projWin.querySelector("img") && !projWin.querySelector("svg")) {
+    renderQRToElement(projWin, STD_WIN_CODE, 220);
+  }
+  if (projDraw && !projDraw.querySelector("img") && !projDraw.querySelector("svg")) {
+    renderQRToElement(projDraw, STD_DRAW_CODE, 220);
+  }
+}
+
+function downloadQRFromHolder(holderId, filename) {
+  const holder = document.getElementById(holderId);
+  if (!holder) return;
+  const canvas = holder.querySelector("canvas");
+  const img = holder.querySelector("img");
+  let url = "";
+  if (canvas) {
+    url = canvas.toDataURL("image/png");
+  } else if (img && img.src) {
+    url = img.src;
+  }
+  if (!url) return;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || "chess_qr.png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// Copy and Download Event Listeners for Standard Station
+document.getElementById("btn-copy-std-win")?.addEventListener("click", () => {
+  navigator.clipboard?.writeText(STD_WIN_CODE);
+  const btn = document.getElementById("btn-copy-std-win");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => (btn.textContent = "Copy Code"), 2000);
+  }
+});
+
+document.getElementById("btn-copy-std-draw")?.addEventListener("click", () => {
+  navigator.clipboard?.writeText(STD_DRAW_CODE);
+  const btn = document.getElementById("btn-copy-std-draw");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => (btn.textContent = "Copy Code"), 2000);
+  }
+});
+
+document.getElementById("btn-download-std-win")?.addEventListener("click", () => {
+  downloadQRFromHolder("standard-win-holder", "chess_winner_qr_2pts.png");
+});
+
+document.getElementById("btn-download-std-draw")?.addEventListener("click", () => {
+  downloadQRFromHolder("standard-draw-holder", "chess_draw_qr_1pt.png");
+});
+
+// Fullscreen Projector Modal controls
+const projModal = document.getElementById("tournament-projector-modal");
+document.getElementById("btn-project-qrs")?.addEventListener("click", () => {
+  if (projModal) {
+    projModal.hidden = false;
+    renderStandardQRs();
+  }
+});
+
+document.getElementById("close-projector-modal")?.addEventListener("click", () => {
+  if (projModal) projModal.hidden = true;
+});
+
+async function loadAdmin() {
+  renderStandardQRs();
+  await Promise.all([loadAdminChallenges(), loadAdminWins(), loadAdminClubs()]);
+}
+
+// Dynamic Round Matchups for Admin Generator
+const ROUND_MATCHUPS = {
+  "Round 1 (Classic 10 min)": ["Match 1 (T1 vs T6)", "Match 2 (T2 vs T5)", "Match 3 (T3 vs T4)"],
+  "Round 2 (Duck Chess)": ["Match 1 (T5 vs T3)", "Match 2 (T1 vs T2)", "Match 3 (T6 vs T4)"],
+  "Round 3 (Giveaway Chess)": ["Match 1 (T4 vs T2)", "Match 2 (T5 vs T6)", "Match 3 (T3 vs T1)"],
+  "Round 4 (3-Check Chess)": ["Match 1 (T2 vs T6)", "Match 2 (T1 vs T4)", "Match 3 (T3 vs T5)"],
+  "Round 5 (Physical Relay Chess)": ["Match 1 (T1 vs T5)", "Match 2 (T6 vs T3)", "Match 3 (T4 vs T2)"],
+};
+
+const roundSelect = $("#admin-round-select");
+const matchSelect = $("#admin-match-select");
+
+roundSelect?.addEventListener("change", () => {
+  const round = roundSelect.value;
+  const matches = ROUND_MATCHUPS[round] || ["Match 1", "Match 2", "Match 3"];
+  if (matchSelect) {
+    matchSelect.innerHTML = matches.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
+  }
+});
+
+// Dual QR Generator (Winner & Draw simultaneously)
+async function generateBothMatchQRs(round, match) {
+  const msgEl = $("#challenge-msg");
+  setMsg(msgEl, "Generating match QR codes...", true);
+  try {
+    const [winData, drawData] = await Promise.all([
+      api("admin/generate-qr", {
+        method: "POST",
+        body: {
+          title: `${round} - ${match} (WIN)`,
+          outcome: "win",
+          points: 2,
+          round,
+          board: match,
+        },
+      }),
+      api("admin/generate-qr", {
+        method: "POST",
+        body: {
+          title: `${round} - ${match} (DRAW)`,
+          outcome: "draw",
+          points: 1,
+          round,
+          board: match,
+        },
+      }),
+    ]);
+
+    setMsg(msgEl, `Both QR Codes (Winner +2 & Draw +1) generated for ${round} - ${match}!`, true);
+    displayDualLiveQR(winData, drawData, `${round} — ${match}`);
+    loadAdminChallenges();
+  } catch (err) {
+    setMsg(msgEl, err.message, false);
+  }
+}
+
+function displayDualLiveQR(winData, drawData, matchHeader) {
+  const card = $("#admin-dual-qr-card");
+  const winHolder = $("#dual-win-holder");
+  const drawHolder = $("#dual-draw-holder");
+  const header = $("#dual-match-header");
+  const winTitle = $("#dual-win-title");
+  const drawTitle = $("#dual-draw-title");
+  const winCode = $("#dual-win-code");
+  const drawCode = $("#dual-draw-code");
+
+  if (!card) return;
+
+  if (header && matchHeader) header.textContent = `${matchHeader} — Match QR Codes`;
+  if (winTitle && winData?.challenge) winTitle.textContent = winData.challenge.name;
+  if (drawTitle && drawData?.challenge) drawTitle.textContent = drawData.challenge.name;
+  if (winCode && winData?.challenge) winCode.textContent = winData.challenge.id;
+  if (drawCode && drawData?.challenge) drawCode.textContent = drawData.challenge.id;
+
+  if (winHolder && window.QRCode) {
+    winHolder.innerHTML = "";
+    new window.QRCode(winHolder, {
+      text: winData.qrPayload || winData.challenge.payload || winData.challenge.id,
+      width: 190,
+      height: 190,
+      colorDark: "#171A1F",
+      colorLight: "#FFFFFF",
+      correctLevel: window.QRCode.CorrectLevel.H,
+    });
+  }
+
+  if (drawHolder && window.QRCode) {
+    drawHolder.innerHTML = "";
+    new window.QRCode(drawHolder, {
+      text: drawData.qrPayload || drawData.challenge.payload || drawData.challenge.id,
+      width: 190,
+      height: 190,
+      colorDark: "#171A1F",
+      colorLight: "#FFFFFF",
+      correctLevel: window.QRCode.CorrectLevel.H,
+    });
+  }
+
+  const copyWinBtn = $("#btn-copy-dual-win");
+  const copyDrawBtn = $("#btn-copy-dual-draw");
+  if (copyWinBtn && winData?.challenge) {
+    copyWinBtn.onclick = () => {
+      navigator.clipboard?.writeText(winData.challenge.id || winData.qrPayload);
+      copyWinBtn.textContent = "Copied!";
+      setTimeout(() => (copyWinBtn.textContent = "Copy Win Code"), 2000);
+    };
+  }
+  if (copyDrawBtn && drawData?.challenge) {
+    copyDrawBtn.onclick = () => {
+      navigator.clipboard?.writeText(drawData.challenge.id || drawData.qrPayload);
+      copyDrawBtn.textContent = "Copied!";
+      setTimeout(() => (copyDrawBtn.textContent = "Copy Draw Code"), 2000);
+    };
+  }
+
+  card.hidden = false;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+$("#btn-admin-both-qr")?.addEventListener("click", () => {
+  const round = roundSelect?.value || "Round 1 (Classic 10 min)";
+  const match = matchSelect?.value || "Match 1";
+  generateBothMatchQRs(round, match);
+});
+
+$("#close-dual-qr")?.addEventListener("click", () => {
+  const card = $("#admin-dual-qr-card");
+  if (card) card.hidden = true;
+});
+
+// Quick 1-click generators
+$("#btn-admin-win-qr")?.addEventListener("click", () => {
+  const round = roundSelect?.value || "Round 1 (Classic 10 min)";
+  const match = matchSelect?.value || "Match 1";
+  createAdminChallenge(`${round} - ${match} (WIN)`, 2, "win");
+});
+
+$("#btn-admin-draw-qr")?.addEventListener("click", () => {
+  const round = roundSelect?.value || "Round 1 (Classic 10 min)";
+  const match = matchSelect?.value || "Match 1";
+  createAdminChallenge(`${round} - ${match} (DRAW)`, 1, "draw");
+});
+
+async function createAdminChallenge(name, points, outcome) {
+  const msgEl = $("#challenge-msg");
+  try {
+    const data = await api("admin/generate-qr", {
+      method: "POST",
+      body: { title: name, outcome, points },
+    });
+    setMsg(msgEl, `QR Generated for ${name} (+${points} pts)!`, true);
+    displayAdminLiveQR(data.challenge, data.qrPayload);
+    loadAdminChallenges();
+  } catch (err) {
+    setMsg(msgEl, err.message, false);
+  }
+}
+
+function displayAdminLiveQR(challenge, payload) {
+  const card = $("#admin-live-qr-card");
+  const holder = $("#admin-qr-holder");
+  const title = $("#live-qr-title");
+  const badge = $("#live-qr-badge");
+  const code = $("#live-qr-code");
+
+  if (!card || !holder) return;
+
+  const isWin = challenge.outcome === "win";
+  if (badge) {
+    badge.className = isWin ? "badge confirmed" : "badge pending";
+    badge.textContent = isWin ? "+2 Points Winner" : "+1 Point Draw";
+  }
+  if (title) title.textContent = challenge.name;
+  if (code) code.textContent = challenge.id;
+
+  holder.innerHTML = "";
+  if (window.QRCode) {
+    new window.QRCode(holder, {
+      text: payload || challenge.payload || challenge.id,
+      width: 220,
+      height: 220,
+      colorDark: "#171A1F",
+      colorLight: "#FFFFFF",
+      correctLevel: window.QRCode.CorrectLevel.H,
+    });
+  }
+
+  card.hidden = false;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+$("#close-live-qr")?.addEventListener("click", () => {
+  const card = $("#admin-live-qr-card");
+  if (card) card.hidden = true;
+});
+
+async function loadAdminChallenges() {
+  const list = $("#challenge-list");
+  if (!list) return;
+
+  try {
+    const data = await api("admin/challenges");
+    const challenges = data.challenges || [];
+
+    if (challenges.length === 0) {
+      list.innerHTML = `<p class="hint">No match QR codes generated yet.</p>`;
+      return;
+    }
+
+    list.innerHTML = challenges
+      .slice(0, 8)
+      .map((c) => {
+        const isWin = c.outcome === "win";
+        return `
+        <div class="card" style="padding: 14px; margin-bottom: 8px;">
+          <div class="row between">
+            <div>
+              <strong style="color: var(--snow); font-size: 14px;">${escapeHtml(c.name)}</strong>
+              <div style="font-size: 11px; color: var(--muted);">ID: <code>${escapeHtml(c.id)}</code> &bull; Claims: ${c.claimedCount || 0} / ${isWin ? 1 : 2}</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="chip" onclick='showQRCard(${JSON.stringify(JSON.stringify(c))})'>Show QR</button>
+              <button type="button" class="chip" onclick="deleteQR('${c.id}')">&times;</button>
+            </div>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+  } catch {}
+}
+
+window.showQRCard = function (cJson) {
+  try {
+    const c = JSON.parse(cJson);
+    displayAdminLiveQR(c, c.payload);
+  } catch {}
+};
+
+window.deleteQR = async function (id) {
+  if (!confirm("Delete this match code?")) return;
+  try {
+    await api(`admin/challenges/${id}`, { method: "DELETE" });
+    loadAdminChallenges();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+// Wins / Scans Log
+async function loadAdminWins() {
+  const list = $("#win-list");
+  const filter = $("#win-filter")?.value || "";
+  const msgEl = $("#win-msg");
+  if (!list) return;
+
+  try {
+    const data = await api(`admin/wins?status=${encodeURIComponent(filter)}`);
+    const wins = data.wins || [];
+
+    // Also check total pending wins to show batch approve button
+    const allWinsData = filter === "" ? data : await api("admin/wins").catch(() => ({ wins: [] }));
+    const allPending = (allWinsData.wins || []).filter((w) => w.status === "pending");
+    const approveAllBtn = $("#btn-approve-all-pending");
+    if (approveAllBtn) {
+      if (allPending.length > 0) {
+        approveAllBtn.hidden = false;
+        approveAllBtn.textContent = `Approve All Pending (${allPending.length})`;
+      } else {
+        approveAllBtn.hidden = true;
+      }
+    }
+
+    if (wins.length === 0) {
+      list.innerHTML = `<p class="hint" style="padding: 12px 0;">No match submissions found${filter ? ` with status '${filter}'` : ""}.</p>`;
+      return;
+    }
+
+    list.innerHTML = wins
+      .map((w) => {
+        const timeStr = w.createdAt ? new Date(w.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+        const isPending = w.status === "pending";
+        return `
+        <div class="win" style="${isPending ? "background: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; padding: 12px 14px; border-radius: 12px; margin-bottom: 8px;" : "padding: 12px 0; border-bottom: 1px solid var(--line);"}">
+          <div>
+            <strong style="color: var(--snow); font-size: 14px;">${escapeHtml(w.clubName || w.username)}</strong>: ${escapeHtml(w.challenge || "Match")} (+${w.points} pts)
+            <div style="font-size: 11px; color: var(--muted); margin-top: 3px;">${timeStr} &bull; Status: <span class="badge ${w.status}">${w.status}</span></div>
+          </div>
+          <div class="win-actions">
+            ${
+              w.status !== "confirmed"
+                ? `<button type="button" class="chip" style="background: var(--green); color: var(--navy); font-weight: 800; border: none; padding: 5px 14px;" onclick="setWinStatus('${w.id}', 'confirmed')" title="Confirm & Award Points to Leaderboard">Approve</button>`
+                : ""
+            }
+            ${
+              w.status !== "rejected"
+                ? `<button type="button" class="chip" style="color: var(--red); border-color: rgba(223, 51, 49, 0.4); padding: 5px 12px;" onclick="setWinStatus('${w.id}', 'rejected')" title="Reject">Reject</button>`
+                : ""
+            }
+            <button type="button" class="chip" style="padding: 5px 10px;" onclick="deleteWin('${w.id}')" title="Delete">&times;</button>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+  } catch (err) {
+    setMsg(msgEl, "Could not load wins.");
+  }
+}
+
+$("#win-filter")?.addEventListener("change", loadAdminWins);
+$("#refresh-wins")?.addEventListener("click", loadAdminWins);
+
+window.approveAllPendingWins = async function () {
+  if (!confirm("Confirm and approve all pending match submissions? Points will be added to the leaderboard.")) return;
+  try {
+    const res = await api("admin/wins-approve-all", { method: "POST" });
+    setMsg($("#win-msg"), `Approved ${res.approvedCount || 0} match submissions! Points updated.`, true);
+    loadAdminWins();
+    loadLeaderboard();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+window.setWinStatus = async function (id, status) {
+  try {
+    await api(`admin/wins/${id}`, { method: "POST", body: { status } });
+    loadAdminWins();
+    loadLeaderboard();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+window.deleteWin = async function (id) {
+  if (!confirm("Delete this submission?")) return;
+  try {
+    await api(`admin/wins/${id}`, { method: "DELETE" });
+    loadAdminWins();
+    loadLeaderboard();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+// 6 Clubs Manager
+async function loadAdminClubs() {
+  const container = $("#admin-clubs-list");
+  if (!container) return;
+
+  try {
+    const data = await api("clubs");
+    const clubs = data.clubs || [];
+
+    container.innerHTML = clubs
+      .map(
+        (c) => `
+      <div style="background: rgba(248, 250, 249, 0.04); border: 1px solid var(--line); border-radius: 14px; padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <strong style="color: var(--snow);">${escapeHtml(c.name)}</strong>
+          <span style="font-size: 11px; color: var(--muted);">@${escapeHtml(c.username)}</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+          <input type="text" id="rename-${c.id}" value="${escapeHtml(c.name)}" style="flex: 1; padding: 6px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 8px; color: var(--snow); font-size: 12px;">
+          <button type="button" class="chip" onclick="renameClub('${c.id}')" style="padding: 4px 10px; font-size: 11px;">Rename</button>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <input type="password" id="pass-${c.id}" placeholder="New Password" style="flex: 1; padding: 6px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 8px; color: var(--snow); font-size: 12px;">
+          <button type="button" class="chip" onclick="setClubPass('${c.id}')" style="padding: 4px 10px; font-size: 11px;">Set Pass</button>
+        </div>
+      </div>
+    `
+      )
+      .join("");
+  } catch {}
+}
+
+window.renameClub = async function (id) {
+  const input = $(`#rename-${id}`);
+  const name = input ? input.value.trim() : "";
+  if (!name) return;
+
+  try {
+    await api("admin/clubs", { method: "POST", body: { id, name } });
+    alert("Club renamed!");
+    loadAdminClubs();
+    loadLeaderboard();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+window.setClubPass = async function (id) {
+  const input = $(`#pass-${id}`);
+  const pass = input ? input.value.trim() : "";
+  if (!pass || pass.length < 5) {
+    alert("Password must be at least 5 characters.");
+    return;
+  }
+
+  try {
+    await api("admin/clubs", { method: "POST", body: { id, password: pass } });
+    alert("Password updated!");
+    if (input) input.value = "";
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+$("#btn-reset-tournament")?.addEventListener("click", async () => {
+  if (!confirm("Reset ALL scores and match scans to 0?")) return;
+  try {
+    await api("admin/reset", { method: "POST" });
+    alert("Tournament scores reset to 0!");
+    loadAdmin();
+    loadLeaderboard();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// ========================================================
+// 5. ATMOSPHERE PARTICLES CANVAS (ORIGINAL THEME PRESERVED)
+// ========================================================
+(function initAtmosphere() {
+  const canvas = $("#atmosphere-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  let width = 0;
+  let height = 0;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const EMBER_COUNT = Math.max(70, Math.round(window.innerWidth / 16));
+  const TYPES = ["ember", "spark", "wisp"];
+
+  function pickColor() {
+    const roll = Math.random();
+    if (roll < 0.55) return { r: 121, g: 174, b: 68 }; // Green
+    if (roll < 0.85) return { r: 223, g: 51, b: 49 }; // Red
+    return { r: 248, g: 250, b: 249 }; // Snow White
+  }
+
+  class Particle {
+    constructor(initialSpread) { this.reset(initialSpread); }
+
+    reset(initialSpread = false) {
+      this.type = TYPES[Math.floor(Math.random() * TYPES.length)];
+      this.x = Math.random() * width;
+      this.y = initialSpread ? Math.random() * height : height + Math.random() * 40;
+
+      if (this.type === "wisp") {
+        this.radius = 2.5 + Math.random() * 3.5;
+        this.speedY = 0.15 + Math.random() * 0.3;
+        this.baseAlpha = 0.25 + Math.random() * 0.3;
+        this.shadowBlur = 18;
+        this.wanderAmp = 0.5 + Math.random() * 1.0;
+      } else if (this.type === "spark") {
+        this.radius = 0.6 + Math.random() * 1.0;
+        this.speedY = 0.5 + Math.random() * 0.9;
+        this.baseAlpha = 0.7 + Math.random() * 0.3;
+        this.shadowBlur = 5;
+        this.wanderAmp = 0.2 + Math.random() * 0.5;
+      } else {
+        this.radius = 1.0 + Math.random() * 2.2;
+        this.speedY = 0.25 + Math.random() * 0.55;
+        this.baseAlpha = 0.55 + Math.random() * 0.4;
+        this.shadowBlur = 10;
+        this.wanderAmp = 0.35 + Math.random() * 0.75;
+      }
+
+      this.wanderSpeed = 0.003 + Math.random() * 0.009;
+      this.flickerSpeed = 0.025 + Math.random() * 0.06;
+      this.phase = Math.random() * Math.PI * 2;
+      this.step = Math.random() * 200;
+      this.flick = Math.random() * 200;
+      this.driftX = (Math.random() - 0.5) * 0.06;
+
+      const c = pickColor();
+      this.r = c.r; this.g = c.g; this.b = c.b;
+    }
+
+    update() {
+      this.step += this.wanderSpeed;
+      this.flick += this.flickerSpeed;
+      this.y -= this.speedY;
+      this.x += Math.sin(this.step + this.phase) * this.wanderAmp + this.driftX;
+      if (this.y < -20 || this.x < -40 || this.x > width + 40) this.reset();
+    }
+
+    draw() {
+      const flicker = 0.8 + Math.sin(this.flick + this.phase) * 0.2;
+      const topFade = Math.min(1, this.y / (height * 0.10));
+      const bottomFade = Math.min(1, (height - this.y) / (height * 0.03));
+      const fade = Math.min(topFade, bottomFade);
+
+      const a = Math.max(0, Math.min(1, this.baseAlpha * flicker * fade));
+      if (a < 0.01) return;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.r},${this.g},${this.b},${a})`;
+      ctx.shadowBlur = this.shadowBlur;
+      ctx.shadowColor = `rgba(${this.r},${this.g},${this.b},${a * 0.9})`;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  let particles = Array.from({ length: EMBER_COUNT }, () => new Particle(true));
+
+  window.addEventListener("resize", () => {
+    resize();
+    const newCount = Math.max(60, Math.round(window.innerWidth / 18));
+    if (Math.abs(newCount - particles.length) > 10) {
+      particles = Array.from({ length: newCount }, () => new Particle(true));
+    }
+  });
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+    for (const p of particles) { p.update(); p.draw(); }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+// ========================================================
+// INITIAL LOAD
+// ========================================================
+window.addEventListener("DOMContentLoaded", () => {
+  checkClubSession();
+  loadLeaderboard();
+  checkAdminAuth();
+  activateTab("conditions");
+});

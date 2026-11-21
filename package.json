@@ -1,0 +1,16 @@
+{
+  "name": "six-clubs-chess-championship",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Six Clubs Chess Championship Competition Platform with Match QR Scans, Rules, Live Standings, and Arbiter Console",
+  "scripts": {
+    "start": "node local-server.js",
+    "export": "node export_excel.js"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

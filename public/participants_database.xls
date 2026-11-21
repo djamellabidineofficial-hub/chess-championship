@@ -1,0 +1,262 @@
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Segoe UI" ss:Size="11" ss:Color="#0F172A"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#D4AF37"/>
+   </Borders>
+   <Font ss:FontName="Segoe UI" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="TitleStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Segoe UI" ss:Size="14" ss:Color="#D4AF37" ss:Bold="1"/>
+   <Interior ss:Color="#0F172A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="RankGold">
+   <Alignment ss:Horizontal="Center"/>
+   <Font ss:FontName="Segoe UI" ss:Bold="1" ss:Color="#D4AF37"/>
+  </Style>
+  <Style ss:ID="Centered">
+   <Alignment ss:Horizontal="Center"/>
+  </Style>
+  <Style ss:ID="BoldText">
+   <Font ss:FontName="Segoe UI" ss:Bold="1"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Six Clubs Championship">
+  <Table>
+   <Column ss:Width="50"/>
+   <Column ss:Width="200"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="160"/>
+   <Row ss:Height="32">
+    <Cell ss:MergeAcross="9" ss:StyleID="TitleStyle"><Data ss:Type="String">CHESS CHAMPIONSHIP - OFFICIAL STANDINGS (6 CLUBS)</Data></Cell>
+   </Row>
+   <Row ss:Height="26">
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Rank</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Club Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Username</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Total Points</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Played</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Wins (+2)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Draws (+1)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Losses (0)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Win Rate</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Last Match Time</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="RankGold"><Data ss:Type="Number">1</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T1 — Royal Knights</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">club1</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">1</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">1</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">100.0%</Data></Cell>
+    <Cell><Data ss:Type="String">21/11/2026, 09:30:58</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">Alpha Knights</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">alphaknights</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">3</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">Dragon Masters</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">dragon_masters</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">4</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">Ecogeeks</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">ecogeeks</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">5</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">Falcon Club</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">falcon</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">6</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">My Test Club</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">mytestclub</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">7</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T1 — Spartan Knights</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">spartans</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">21/11/2026, 08:11:37</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">8</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T2 — Grandmaster Kings</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">club2</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">9</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T3 — Imperial Queens</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">club3</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">10</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T4 — Iron Rooks</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">club4</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">11</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T5 — Silver Bishops</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">club5</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">12</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T6 — Vanguard Pawns</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">club6</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">0</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">0.0%</Data></Cell>
+    <Cell><Data ss:Type="String">N/A</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+ <Worksheet ss:Name="Match Scans Log">
+  <Table>
+   <Column ss:Width="160"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="200"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="160"/>
+   <Row ss:Height="26">
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Scan ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Club Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Username</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Match Title</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Outcome</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Points</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Status</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Date &amp; Time</Data></Cell>
+   </Row>
+   <Row ss:Height="20">
+    <Cell><Data ss:Type="String">7c139137-8bf7-49b7-80e2-f0a79a82b9d7</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T1 — Royal Knights</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">club1</Data></Cell>
+    <Cell><Data ss:Type="String">Round 1 Victory (+2 pts)</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">WIN</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">CONFIRMED</Data></Cell>
+    <Cell><Data ss:Type="String">21/11/2026, 09:30:58</Data></Cell>
+   </Row>
+   <Row ss:Height="20">
+    <Cell><Data ss:Type="String">31a3cdc7-83f2-4908-b0d7-1a5567c2bdba</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T1 — Spartan Knights</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">spartans</Data></Cell>
+    <Cell><Data ss:Type="String">Round 2 Victory (+2 pts)</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">WIN</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">REJECTED</Data></Cell>
+    <Cell><Data ss:Type="String">21/11/2026, 08:11:37</Data></Cell>
+   </Row>
+   <Row ss:Height="20">
+    <Cell><Data ss:Type="String">755e1081-8c9f-49bc-baa8-bd026f2e7c46</Data></Cell>
+    <Cell ss:StyleID="BoldText"><Data ss:Type="String">T1 — Spartan Knights</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">spartans</Data></Cell>
+    <Cell><Data ss:Type="String">Round 1 Victory (+2 pts)</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">WIN</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="Centered"><Data ss:Type="String">REJECTED</Data></Cell>
+    <Cell><Data ss:Type="String">21/11/2026, 08:10:58</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>

@@ -1,0 +1,33 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="100%" height="100%">
+  <!-- Section 1: Crown / Battlements with center crest -->
+  <polygon points="
+    348,406 
+    652,406 
+    652,266 
+    602,266 
+    572,300 
+    552,300 
+    516,234 
+    484,234 
+    448,300 
+    428,300 
+    398,266 
+    348,266
+  " fill="#FFFFFF" />
+
+  <!-- Section 2: Tower Trunk -->
+  <polygon points="
+    404,436 
+    596,436 
+    616,626 
+    384,626
+  " fill="#FFFFFF" />
+
+  <!-- Section 3: Trapezoidal Base -->
+  <polygon points="
+    380,656 
+    620,656 
+    688,756 
+    312,756
+  " fill="#FFFFFF" />
+</svg>
