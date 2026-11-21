@@ -2,6 +2,9 @@
 
 An official digital competition platform designed for the Inter-Club Chess Championship between six clubs.
 
+🌐 **Live GitHub Pages URL**: [https://djamellabidineofficial-hub.github.io/chess-championship/](https://djamellabidineofficial-hub.github.io/chess-championship/)  
+📦 **GitHub Repository**: [https://github.com/djamellabidineofficial-hub/chess-championship](https://github.com/djamellabidineofficial-hub/chess-championship)
+
 ---
 
 ## Tournament Features
@@ -109,6 +112,21 @@ Chess/
     `-- vendor/
         |-- jsQR.js            # Client-side QR scanner library
         `-- qrcode.js          # QR code SVG/Canvas generator library
+```
+
+---
+
+## Hosting on GitHub Pages
+
+The frontend single-page application is hosted directly on GitHub Pages with full offline & static capabilities (including client-side storage, QR generation, QR camera scanner, and standings calculations):
+
+- **Live URL**: [https://djamellabidineofficial-hub.github.io/chess-championship/](https://djamellabidineofficial-hub.github.io/chess-championship/)
+- Served from the `gh-pages` branch.
+
+To update GitHub Pages manually at any time:
+```bash
+# Push public/ directory to gh-pages branch
+git subtree push --prefix public origin gh-pages
 ```
 
 ---
