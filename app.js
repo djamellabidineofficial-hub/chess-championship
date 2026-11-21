@@ -419,6 +419,11 @@ $("#menu-admin-btn")?.addEventListener("click", () => {
 // TABS & NAVIGATION
 // ========================================================
 function activateTab(tabId) {
+  // If navigating away from scanner, always close camera automatically
+  if (tabId !== "scan") {
+    stopScanner();
+  }
+
   // If attempting to scan while not logged in, direct to login
   if (tabId === "scan" && !session.token) {
     tabId = "visitor";
@@ -745,6 +750,7 @@ function updateScanClubBadge() {
 
 closeResultBtn?.addEventListener("click", () => {
   if (codeResult) codeResult.hidden = true;
+  stopScanner();
 });
 
 function showScanSuccess(win, pts, challengeName) {
@@ -791,6 +797,36 @@ function showScanError(msg) {
 let scanStream = null;
 let scanTimer = null;
 
+function stopScanner() {
+  if (scanTimer) {
+    clearInterval(scanTimer);
+    scanTimer = null;
+  }
+  if (scanStream) {
+    try {
+      scanStream.getTracks().forEach((track) => {
+        track.stop();
+        track.enabled = false;
+      });
+    } catch {}
+    scanStream = null;
+  }
+  if (video) {
+    try {
+      video.pause();
+      video.srcObject = null;
+    } catch {}
+  }
+  if (videoWrap) {
+    videoWrap.hidden = true;
+    videoWrap.style.display = "none";
+  }
+  if (startScanBtn) {
+    startScanBtn.style.display = "";
+    startScanBtn.disabled = false;
+  }
+}
+
 startScanBtn?.addEventListener("click", async () => {
   if (!session.token) {
     setMsg(scanMsg, "Please log in with your club account first before scanning.", false);
@@ -805,14 +841,23 @@ startScanBtn?.addEventListener("click", async () => {
   }
 
   try {
+    stopScanner();
+
     scanStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment" },
     });
     if (video) {
       video.srcObject = scanStream;
-      video.play();
+      video.setAttribute("playsinline", "true");
+      await video.play().catch(() => {});
     }
-    if (videoWrap) videoWrap.hidden = false;
+    if (videoWrap) {
+      videoWrap.hidden = false;
+      videoWrap.style.display = "block";
+    }
+    if (startScanBtn) {
+      startScanBtn.style.display = "none";
+    }
 
     scanTimer = setInterval(() => {
       if (video && video.readyState === video.HAVE_ENOUGH_DATA && window.jsQR) {
@@ -826,27 +871,17 @@ startScanBtn?.addEventListener("click", async () => {
           inversionAttempts: "dontInvert",
         });
         if (found && found.data) {
+          // Immediately close camera automatically after scanning QR code
           stopScanner();
           submitScanCode(found.data);
         }
       }
-    }, 250);
+    }, 200);
   } catch (err) {
+    stopScanner();
     setMsg(scanMsg, "Could not open camera. Please allow permissions or paste code below.");
   }
 });
-
-function stopScanner() {
-  if (scanTimer) {
-    clearInterval(scanTimer);
-    scanTimer = null;
-  }
-  if (scanStream) {
-    scanStream.getTracks().forEach((t) => t.stop());
-    scanStream = null;
-  }
-  if (videoWrap) videoWrap.hidden = true;
-}
 
 stopScanBtn?.addEventListener("click", stopScanner);
 
@@ -861,19 +896,24 @@ manualSubmit?.addEventListener("click", () => {
     activateTab("visitor");
     return;
   }
+  stopScanner();
   submitScanCode(code);
   if (manualCode) manualCode.value = "";
 });
 
 async function submitScanCode(code) {
+  // Ensure camera is fully stopped and hardware released immediately
+  stopScanner();
   setMsg(scanMsg, "Verifying match code with arbiter...", true);
   try {
     const data = await api("scan", { method: "POST", body: { code } });
+    stopScanner();
     setMsg(scanMsg, "");
     showScanSuccess(data.win, data.points, data.challenge);
     checkClubSession();
     loadLeaderboard();
   } catch (err) {
+    stopScanner();
     setMsg(scanMsg, err.message, false);
     showScanError(err.message);
   }
@@ -934,24 +974,48 @@ async function loadLeaderboard() {
       `;
     }
 
-    // Remaining clubs ranking list (places 4 and below; places 1, 2, 3 are displayed on the podium above and not repeated)
+    // Complete clubs ranking list (places 1 through N in sequential / tied competition order)
     if (listEl) {
-      const remainingRows = rows.slice(3);
-      if (remainingRows.length === 0) {
-        listEl.innerHTML = `<p class="hint" style="text-align: center; padding: 16px 0; margin: 0;">Top clubs displayed on the podium above.</p>`;
+      if (rows.length === 0) {
+        listEl.innerHTML = `<p class="hint" style="text-align: center; padding: 16px 0; margin: 0;">No clubs registered yet.</p>`;
       } else {
-        listEl.innerHTML = remainingRows
+        const maxPts = Math.max(1, ...rows.map(r => Number(r.points) || 0));
+
+        // Compute official competition ranking with tied ranks for equal score, wins, and draws
+        let currentRank = 1;
+        rows.forEach((r, idx) => {
+          if (idx > 0) {
+            const prev = rows[idx - 1];
+            const isTied = (Number(r.points) || 0) === (Number(prev.points) || 0) &&
+                           (Number(r.wins) || 0) === (Number(prev.wins) || 0) &&
+                           (Number(r.draws) || 0) === (Number(prev.draws) || 0);
+            if (!isTied) {
+              currentRank = idx + 1;
+            }
+          }
+          r.computedRank = currentRank;
+        });
+
+        listEl.innerHTML = rows
           .map((r) => {
+            const placeNum = r.computedRank;
+            const pts = Number(r.points) || 0;
+            const pct = Math.min(100, Math.round((pts / maxPts) * 100));
+            const rankClass = placeNum === 1 ? "rank-gold" : placeNum === 2 ? "rank-silver" : placeNum === 3 ? "rank-bronze" : "rank-standard";
             return `
-            <div class="ranking-row" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 15px; font-weight: 800; color: var(--muted); width: 28px; text-align: center;">#${r.place}</span>
-                <div>
-                  <strong style="font-size: 14px; color: var(--snow); display: block;">${escapeHtml(r.name)}</strong>
+            <div class="rank-item ${rankClass}">
+              <div class="rank-num"><bdi dir="ltr">${placeNum}</bdi></div>
+              <div class="rank-info">
+                <div class="rank-header">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="rank-name">${escapeHtml(r.name)}</span>
+                    ${r.slot ? `<span class="badge" style="font-size: 10px; padding: 1px 6px;">${escapeHtml(r.slot)}</span>` : ""}
+                  </div>
+                  <span class="rank-pts">${formatPoints(pts)} PTS</span>
                 </div>
-              </div>
-              <div style="text-align: right;">
-                <span class="badge confirmed" style="font-size: 13px; font-weight: 800;">${formatPoints(r.points)} PTS</span>
+                <div class="rank-bar-track">
+                  <div class="rank-bar-fill" style="width: ${pct}%;"></div>
+                </div>
               </div>
             </div>
           `;
