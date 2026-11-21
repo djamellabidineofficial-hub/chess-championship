@@ -86,15 +86,8 @@ const clientStore = {
       return {
         token,
         user: username,
-        club: {
-          id: username,
-          name: rawName,
-          username: username,
-          slot: slot || "",
-          points: 0,
-          wins: 0,
-          draws: 0
-        }
+        username: username,
+        club: newClub
       };
     }
 
@@ -121,6 +114,7 @@ const clientStore = {
       return {
         token,
         user: club.username || club.id,
+        username: club.username || club.id,
         club: {
           id: club.id,
           name: club.name,
@@ -137,18 +131,20 @@ const clientStore = {
     if (cleanPath === "me") {
       const tok = session.token;
       const sess = tok ? db.sessions[tok] : null;
-      const clubId = sess ? sess.clubId : session.user;
-      const club = db.clubs.find(c => c.id === clubId || c.username === clubId) || db.clubs[0];
+      const clubId = sess ? (sess.clubId || sess.username) : session.user;
+      const club = db.clubs.find(c => c.id === clubId || c.username === clubId) || session.club || db.clubs[0];
+      const clubInfo = {
+        id: club.id || clubId,
+        username: club.username || club.id || clubId,
+        name: club.name || club.username || "My Club",
+        slot: club.slot || "",
+        points: club.points || 0,
+        wins: club.wins || 0,
+        draws: club.draws || 0
+      };
       return {
-        club: {
-          id: club.id,
-          name: club.name,
-          username: club.username || club.id,
-          slot: club.slot || "",
-          points: club.points || 0,
-          wins: club.wins || 0,
-          draws: club.draws || 0
-        }
+        user: clubInfo,
+        club: clubInfo
       };
     }
 
@@ -493,32 +489,48 @@ async function checkClubSession() {
 
   try {
     const me = await api("me");
-    renderClubDash(me.user);
-  } catch {
-    session.token = null;
-    session.user = null;
-    session.club = null;
-    if (authBox) authBox.hidden = false;
-    if (clubDashBox) clubDashBox.hidden = true;
+    const clubUser = me?.user || me?.club || session.club || {};
+    if (!clubUser.name && !clubUser.username) {
+      throw new Error("No club profile found");
+    }
+    await renderClubDash(clubUser);
+  } catch (err) {
+    console.warn("Session check fallback:", err);
+    if (session.club) {
+      await renderClubDash(session.club);
+    } else {
+      session.token = null;
+      session.user = null;
+      session.club = null;
+      if (authBox) authBox.hidden = false;
+      if (clubDashBox) clubDashBox.hidden = true;
+    }
   }
 }
 
-async function renderClubDash(user) {
+async function renderClubDash(data) {
+  const user = data?.user || data?.club || data || {};
+  if (!user || (!user.name && !user.username)) return;
+
   if (authBox) authBox.hidden = true;
   if (clubDashBox) clubDashBox.hidden = false;
 
-  $("#club-display-name").textContent = user.name || user.username;
-  $("#who").textContent = `@${user.username}`;
+  const displayName = user.name || user.username || "My Club";
+  const uname = user.username || user.id || "club";
+
+  $("#club-display-name").textContent = displayName;
+  $("#who").textContent = `@${uname}`;
   $("#club-dash-pts").textContent = user.points || 0;
 
   // Standings rank
   try {
     const lb = await api("leaderboard");
-    const rankInfo = lb.rows?.find((r) => r.username === user.username);
+    const rankInfo = lb.rows?.find((r) => r.username === uname || r.id === uname || r.id === user.id);
     if (rankInfo) {
-      $("#club-dash-rank").textContent = `#${rankInfo.place}`;
-      $("#club-dash-wins").textContent = rankInfo.wins;
-      $("#club-dash-draws").textContent = rankInfo.draws;
+      const place = rankInfo.rank || rankInfo.place || (lb.rows.indexOf(rankInfo) + 1);
+      $("#club-dash-rank").textContent = `#${place}`;
+      $("#club-dash-wins").textContent = rankInfo.wins ?? 0;
+      $("#club-dash-draws").textContent = rankInfo.draws ?? 0;
     }
   } catch {}
 
@@ -576,19 +588,19 @@ $("#login-form")?.addEventListener("submit", async (e) => {
   try {
     const data = await api("login", { method: "POST", body: { username, password } });
     session.token = data.token;
-    session.user = data.username;
-    session.club = data.club;
+    session.user = data.username || data.user || username;
+    session.club = data.club || { id: username, username, name: data.username || username, slot: "", points: 0, wins: 0, draws: 0 };
     setMsg(authMsg, "");
 
     // Reveal main tabs
     if (mainNav) mainNav.hidden = false;
-    await renderClubDash({ username: data.username, ...data.club });
+    await renderClubDash(session.club);
 
     // Stay on My Club section and show active dashboard with welcome message!
     activateTab("visitor");
     const dashMsg = $("#club-dash-msg");
     if (dashMsg) {
-      setMsg(dashMsg, `Welcome back, ${data.club?.name || data.username}! You are signed in.`, true);
+      setMsg(dashMsg, `Welcome back, ${session.club?.name || session.user}! You are signed in.`, true);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
@@ -627,19 +639,19 @@ $("#register-form")?.addEventListener("submit", async (e) => {
   try {
     const data = await api("register", { method: "POST", body: { username, name, password, slot } });
     session.token = data.token;
-    session.user = data.username;
-    session.club = data.club;
+    session.user = data.username || data.user || username;
+    session.club = data.club || { id: username, username, name, slot, points: 0, wins: 0, draws: 0 };
     setMsg(authMsg, "");
 
     // Reveal main tabs
     if (mainNav) mainNav.hidden = false;
-    await renderClubDash({ username: data.username, ...data.club });
+    await renderClubDash(session.club);
 
     // Stay on My Club section and display the newly created account dashboard!
     activateTab("visitor");
     const dashMsg = $("#club-dash-msg");
     if (dashMsg) {
-      setMsg(dashMsg, `Club account "${data.club?.name || data.username}" created successfully! Welcome to the championship.`, true);
+      setMsg(dashMsg, `Club account "${session.club?.name || session.user}" created successfully! Welcome to the championship.`, true);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
