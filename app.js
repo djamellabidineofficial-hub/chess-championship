@@ -127,20 +127,25 @@ const clientStore = {
       };
     }
 
-    // 3. ME (Profile)
+    // 3. ME (Profile - Only CONFIRMED matches award points)
     if (cleanPath === "me") {
       const tok = session.token;
       const sess = tok ? db.sessions[tok] : null;
       const clubId = sess ? (sess.clubId || sess.username) : session.user;
       const club = db.clubs.find(c => c.id === clubId || c.username === clubId) || session.club || db.clubs[0];
+      const confirmedScans = (db.scans || []).filter(s => s.status === "confirmed");
+      const clubScans = confirmedScans.filter(s => s.clubId === club.id || s.username === club.username || s.clubId === club.username);
+      const pts = clubScans.reduce((sum, s) => sum + (Number(s.points) || 0), 0);
+      const wins = clubScans.filter(s => s.outcome === "win" || s.points === 2).length;
+      const draws = clubScans.filter(s => s.outcome === "draw" || s.points === 1).length;
       const clubInfo = {
         id: club.id || clubId,
         username: club.username || club.id || clubId,
         name: club.name || club.username || "My Club",
         slot: club.slot || "",
-        points: club.points || 0,
-        wins: club.wins || 0,
-        draws: club.draws || 0
+        points: pts,
+        wins: wins,
+        draws: draws
       };
       return {
         user: clubInfo,
@@ -148,20 +153,27 @@ const clientStore = {
       };
     }
 
-    // 4. LEADERBOARD
+    // 4. LEADERBOARD (Only CONFIRMED matches award points)
     if (cleanPath === "leaderboard") {
-      const sorted = [...db.clubs].sort((a, b) => (b.points || 0) - (a.points || 0));
-      return {
-        rows: sorted.map((c, i) => ({
+      const confirmedScans = (db.scans || []).filter(s => s.status === "confirmed");
+      const rows = db.clubs.map(c => {
+        const clubScans = confirmedScans.filter(s => s.clubId === c.id || s.username === c.username || s.clubId === c.username);
+        const pts = clubScans.reduce((sum, s) => sum + (Number(s.points) || 0), 0);
+        const wins = clubScans.filter(s => s.outcome === "win" || s.points === 2).length;
+        const draws = clubScans.filter(s => s.outcome === "draw" || s.points === 1).length;
+        return {
           id: c.id,
           name: c.name,
           username: c.username || c.id,
           slot: c.slot || "",
-          points: c.points || 0,
-          wins: c.wins || 0,
-          draws: c.draws || 0,
-          rank: i + 1
-        }))
+          points: pts,
+          wins: wins,
+          draws: draws
+        };
+      });
+      rows.sort((a, b) => b.points - a.points || b.wins - a.wins || b.draws - a.draws || a.name.localeCompare(b.name));
+      return {
+        rows: rows.map((r, i) => ({ ...r, rank: i + 1, place: i + 1 }))
       };
     }
 
@@ -169,50 +181,56 @@ const clientStore = {
     if (cleanPath === "my-scans") {
       const tok = session.token;
       const sess = tok ? db.sessions[tok] : null;
-      const clubId = sess ? sess.clubId : session.user;
-      const clubScans = (db.scans || []).filter(s => s.clubId === clubId);
+      const clubId = sess ? (sess.clubId || sess.username) : session.user;
+      const clubScans = (db.scans || []).filter(s => s.clubId === clubId || s.username === clubId);
       return { scans: clubScans };
     }
 
-    // 6. SCAN
+    // 6. SCAN (Always PENDING until Admin confirms!)
     if (cleanPath === "scan" && method === "POST") {
       const code = (body.code || "").trim();
       const tok = session.token;
       const sess = tok ? db.sessions[tok] : null;
-      const clubId = sess ? sess.clubId : session.user;
+      const clubId = sess ? (sess.clubId || sess.username) : session.user;
       const club = db.clubs.find(c => c.id === clubId || c.username === clubId);
-      if (!club) throw new Error("Please log in to register a match.");
+      if (!club) throw new Error("Please log in with your club account before scanning.");
 
-      const isDraw = code.toLowerCase().includes("draw") || code.includes("+1");
+      const isDraw = code.toLowerCase().includes("draw") || code.includes("+1") || code.toUpperCase().includes("DRAW");
       const pts = isDraw ? 1 : 2;
 
-      club.points = (club.points || 0) + pts;
-      if (isDraw) {
-        club.draws = (club.draws || 0) + 1;
-      } else {
-        club.wins = (club.wins || 0) + 1;
+      if (!db.scans) db.scans = [];
+
+      const myClubScans = db.scans.filter(s => (s.clubId === club.id || s.username === club.username) && s.status !== "rejected");
+      if (myClubScans.length >= 5) {
+        throw new Error(`Your club (${club.name}) has already recorded results for all 5 rounds! (5/5 matches recorded).`);
       }
 
+      const roundNum = myClubScans.length + 1;
+      const challengeTitle = `Round ${roundNum} ${isDraw ? "Draw (+1 pt)" : "Victory (+2 pts)"}`;
+
       const scanRec = {
-        id: "scan_" + Date.now(),
+        id: "scan_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
         clubId: club.id,
+        username: club.username || club.id,
         clubName: club.name,
+        challenge: challengeTitle,
         outcome: isDraw ? "draw" : "win",
         points: pts,
-        status: "confirmed",
+        status: "pending", // PENDING until confirmed by arbiter
         createdAt: new Date().toISOString()
       };
 
-      if (!db.scans) db.scans = [];
       db.scans.push(scanRec);
       this.saveDb(db);
 
       return {
         ok: true,
+        win: scanRec,
         outcome: scanRec.outcome,
         points: pts,
-        totalPoints: club.points,
-        message: "Match registered successfully!"
+        challenge: challengeTitle,
+        status: "pending",
+        message: "Match submission recorded! Points will appear on the leaderboard once confirmed by the arbiter."
       };
     }
 
@@ -227,7 +245,36 @@ const clientStore = {
         return { challenges: [] };
       }
       if (cleanPath === "admin/wins") {
-        return { wins: db.scans || [] };
+        const filterStatus = path.includes("status=") ? (new URLSearchParams(path.split("?")[1])).get("status") : "";
+        const wins = (db.scans || []).filter(s => !filterStatus || s.status === filterStatus);
+        return { wins };
+      }
+      if (cleanPath === "admin/wins-approve-all" && method === "POST") {
+        let approvedCount = 0;
+        (db.scans || []).forEach(s => {
+          if (s.status === "pending") {
+            s.status = "confirmed";
+            approvedCount++;
+          }
+        });
+        this.saveDb(db);
+        return { ok: true, approvedCount };
+      }
+      if (cleanPath.startsWith("admin/wins/") && method === "POST") {
+        const winId = cleanPath.split("/")[2];
+        const status = body.status || "confirmed";
+        const scan = (db.scans || []).find(s => s.id === winId);
+        if (scan) {
+          scan.status = status;
+          this.saveDb(db);
+        }
+        return { ok: true, status };
+      }
+      if (cleanPath.startsWith("admin/wins/") && method === "DELETE") {
+        const winId = cleanPath.split("/")[2];
+        db.scans = (db.scans || []).filter(s => s.id !== winId);
+        this.saveDb(db);
+        return { ok: true };
       }
       if (cleanPath === "admin/reset" && method === "POST") {
         db.clubs.forEach(c => {
